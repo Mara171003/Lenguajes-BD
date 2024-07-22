@@ -270,7 +270,6 @@ BEGIN
     LOOP
         FETCH notames_cursor INTO v_id_check, v_nota_mensual, v_id_foto;
         EXIT WHEN notames_cursor%NOTFOUND;
-        
 --resultados
 
         DBMS_OUTPUT.PUT_LINE('ID_CHECK: ' || v_id_check || ', NOTA_MENSUAL: ' || v_nota_mensual || ', ID_FOTO: ' || v_id_foto);
@@ -428,8 +427,7 @@ BEGIN
     SELECT nm.nota_mensual
     INTO v_nota
     FROM notames nm
-    JOIN fotos f ON nm.id_usuario = f.id_usuario
-    WHERE f.id_foto = p_id_foto;
+    WHERE nm.id_foto = p_id_foto;
 
     RETURN v_nota;
 EXCEPTION
