@@ -2,48 +2,65 @@
 include "../DAL/conexion.php";
 require_once "../include/functions/recoge.php";
 session_start();
-//verifica si hay contenido en los campos txt
-if(isset($_POST["correo"])){
-               
 
-        $nombre=recogePost("nombre");
-        $primerApellido=recogePost("apellido1");
-        $segundoApellido=recogePost("apellido2");
-        $correo=recogePost("correo");
-        $password=recogePost("password");
-        $password = md5($password); //encriptar contrasena-
+if (isset($_POST["correo"])) {
+    $nombre = recogePost("nombre");
+    $primerApellido = recogePost("apellido1");
+    $segundoApellido = recogePost("apellido2");
+    $correo = recogePost("correo");
+    $password = recogePost("password");
+    $password = md5($password); // Encriptar contraseña
 
+    $conn = Conecta();
 
-        //verifica si el correo ya se registro para evitar duplicados
-        $verificarCorreo = "SELECT correo FROM usuario WHERE correo = '$correo'";
-        $resultado = Conecta()->query($verificarCorreo);
-        if(mysqli_num_rows($resultado)>0){
-            echo 'Este correo ya está registrado';
-            die();
+    // Verificar si el correo ya está registrado
+    $verificarCorreo = "SELECT correo FROM usuario WHERE correo = :correo";
+    $stid = oci_parse($conn, $verificarCorreo);
+    oci_bind_by_name($stid, ':correo', $correo);
+    oci_execute($stid);
+
+    if (oci_fetch($stid)) {
+        echo 'Este correo ya está registrado';
+        oci_free_statement($stid);
+        oci_close($conn);
+        die();
+    }
+
+    oci_free_statement($stid);
+
+    // Insertar nuevo usuario
+    $sql = "INSERT INTO usuario (nombre, primer_apellido, segundo_apellido, correo, tipo_suscripcion, id_rol, password)
+            VALUES (:nombre, :primer_apellido, :segundo_apellido, :correo, 'basico', 2, :password)";
+    $stid = oci_parse($conn, $sql);
+    oci_bind_by_name($stid, ':nombre', $nombre);
+    oci_bind_by_name($stid, ':primer_apellido', $primerApellido);
+    oci_bind_by_name($stid, ':segundo_apellido', $segundoApellido);
+    oci_bind_by_name($stid, ':correo', $correo);
+    oci_bind_by_name($stid, ':password', $password);
+
+    if (oci_execute($stid)) {
+        echo 'Usuario registrado';
+
+        // Validación e inicio de sesión automático
+        $validacion = "SELECT * FROM usuario WHERE correo = :correo";
+        $stid = oci_parse($conn, $validacion);
+        oci_bind_by_name($stid, ':correo', $correo);
+        oci_execute($stid);
+
+        if ($datos = oci_fetch_object($stid)) {
+            $_SESSION['usuario'] = $datos->CORREO;
+            $_SESSION['id'] = $datos->ID_USUARIO;
+            $_SESSION['rol'] = $datos->ID_ROL;
+            $_SESSION['apellido1'] = $datos->PRIMER_APELLIDO;
+            $_SESSION['apellido2'] = $datos->SEGUNDO_APELLIDO;
+            $_SESSION['nombre'] = $datos->NOMBRE;
+            header("Location: ../index.php");
         }
+    } else {
+        echo 'Error al registrar';
+    }
 
-        //intertar en la BD ----------
-        $sql=Conecta()->query("insert into usuario (nombre, primer_apellido, segundo_apellido, correo, tipo_suscripcion, id_rol, PASSWORD)
-        values ('$nombre', '$primerApellido', '$segundoApellido', '$correo', 'basico', 2, '$password');");
-
-        if($sql==1){//alertas de insert.
-            echo 'Usuario registrado';
-        }else{
-            echo 'Error al registrar';
-        }
-
-        $validacion = Conecta()->query("SELECT * FROM usuario WHERE correo = '$correo'");
-
-            if($datos = $validacion->fetch_object()) {
-                
-                $_SESSION['usuario']=$datos->correo;//extrae el correo
-                $_SESSION['id']=$datos->id_usuario;//extrae el id del usuario autenticado
-                $_SESSION['rol']=$datos->id_rol;//extrae el rol
-                $_SESSION['apellido1']=$datos->primer_apellido;
-                $_SESSION['apellido2']=$datos->segundo_apellido;
-                $_SESSION['nombre']=$datos->nombre;
-            }
-    }  
-
-
+    oci_free_statement($stid);
+    oci_close($conn);
+}
 ?>

@@ -1,86 +1,25 @@
 <?php
-require_once "conexion.php";
+include "conexion.php";
 
-function edad($fecha_nacimiento) {
+function obtenerDatosUsuario($userId) {
+    $conn = Conecta();
 
-    // Convierte la fecha de nacimiento a DateTime
-    $fecha_nacimiento_obj = new DateTime($fecha_nacimiento);
+    // Preparar y ejecutar la consulta
+    $query = "SELECT * FROM usuario WHERE id_usuario = :user_id";
+    $stid = oci_parse($conn, $query);
+    oci_bind_by_name($stid, ':user_id', $userId);
+    oci_execute($stid);
 
-    // Calcular la diferencia entre la fecha de nacimiento y la fecha actual
-    $diferencia = date_diff(new DateTime(), $fecha_nacimiento_obj);
+    // Recoger los resultados
+    $result = [];
+    while ($row = oci_fetch_assoc($stid)) {
+        $result[] = $row;
+    }
 
-    // Obtiene la edad
-    $edad = $diferencia->y;
+    oci_free_statement($stid);
+    oci_close($conn);
 
-    return $edad;
+    return $result;
 }
-//actualiza datos de la tabla detalles usuario.
-    if (!empty($_POST["btnActualizarDatos"])){
-        //verifica si cada textfield tiene datos
-        if(!empty($_POST["altura"]) and !empty($_POST["peso"]) and
-        !empty($_POST["lesiones"]) and !empty($_POST["medicamentos"]) and
-        !empty($_POST["embarazo"]) and !empty($_POST["cirugia"]) and
-        !empty($_POST["objetivos"]) and !empty($_POST["edad"])){
-
-            $id_detalle=$_POST["id_detalle"];
-            $altura=$_POST["altura"];
-            $peso=$_POST["peso"];
-            $lesiones=$_POST["lesiones"];
-            $medicamentos=$_POST["medicamentos"];
-            $embarazo=$_POST["embarazo"];
-            $cirugia=$_POST["cirugia"];
-            $objetivos=$_POST["objetivos"];
-            $edad=$_POST["edad"];
-
-            //modifica datos
-            $sql=Conecta()->query(" update detalles_usuario set 
-            altura_persona='$altura',
-            peso_persona='$peso',
-            lesiones='$lesiones',
-            medicamentos='$medicamentos',
-            embarazo='$embarazo',
-            cirugia='$cirugia',
-            objetivos='$objetivos',
-            fecha_nacimiento='$edad' where id_detalle=$id_detalle;");
-            if($sql==1){//si se actualiza correctamente
-                echo "<script>window.location.href = '../index.php';</script>"; //ir al index
-            }else{
-                echo '<div class="alert alert-warning text-center"> Error al actualizar datos </div>';
-            }
-
-        }else{
-            echo '<div class="alert alert-warning text-center"> Campos vacios </div>';
-        }
-    }
-
-    //Agrega datos de la tabla detalles usuario
-    if (!empty($_POST["btnAgregarDatos"])){
-        //verifica si cada textfield tiene datos
-        if(!empty($_POST["altura"]) and !empty($_POST["peso"]) and
-        !empty($_POST["lesiones"]) and !empty($_POST["medicamentos"]) and
-        !empty($_POST["embarazo"]) and !empty($_POST["cirugia"]) and
-        !empty($_POST["objetivos"]) and !empty($_POST["edad"])){
-
-            $altura=$_POST["altura"];
-            $peso=$_POST["peso"];
-            $lesiones=$_POST["lesiones"];
-            $medicamentos=$_POST["medicamentos"];
-            $embarazo=$_POST["embarazo"];
-            $cirugia=$_POST["cirugia"];
-            $objetivos=$_POST["objetivos"];
-            $edad=$_POST["edad"];
-            $id_usuario=$_SESSION['id'];
-
-            //modifica datos
-            $sql = Conecta()->query("INSERT INTO detalles_usuario (fecha_nacimiento, altura_persona, peso_persona, lesiones, medicamentos, embarazo, cirugia, objetivos, id_usuario) 
-            VALUES ('$edad', '$altura', '$peso', '$lesiones', '$medicamentos', '$embarazo', '$cirugia', '$objetivos', $id_usuario);");
-
-            echo "<script>window.location.href = '../index.php';</script>";
-
-
-        }else{
-            echo '<div class="alert alert-warning text-center"> Campos vacios </div>';
-        }
-    }
 
 ?>

@@ -1,14 +1,22 @@
 <?php 
 session_start();
 
-//verificar si se accedio con login
-if(empty($_SESSION['usuario'])){ //si no hay una sesion usuario
-    header("location: usuario/vistaLogin.php");//devolver al login
-} 
-$idUsuario=$_GET["id"];
+// Verificar si se accedió con login
+if(empty($_SESSION['usuario'])) { // Si no hay una sesión usuario
+    header("location: usuario/vistaLogin.php"); // Devolver al login
+    exit;
+}
+
+$idUsuario = $_GET["id"];
 include "../DAL/conexion.php";
 
-$sqlR = Conecta()->query("select id_rutina, nombre_rutina, dia_rutina from rutina where id_usuario=$idUsuario");
+// Obtener la conexión a la base de datos
+$conn = Conecta();
+
+// Preparar y ejecutar la consulta
+$sqlR = oci_parse($conn, "SELECT id_rutina, nombre_rutina, dia_rutina FROM rutina WHERE id_usuario = :idUsuario");
+oci_bind_by_name($sqlR, ':idUsuario', $idUsuario);
+oci_execute($sqlR);
 ?>
 
 <!DOCTYPE html>

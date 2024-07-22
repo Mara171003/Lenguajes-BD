@@ -3,7 +3,7 @@
 function Conecta() {
     $username = 'C##PROYECTO';
     $password = 'proyectoSQL';
-    $connection_string = 'localhost/orcl'; // Cambia a tu string de conexión
+    $connection_string = 'localhost/orcl';
 
     // Conectar a la base de datos Oracle
     $conn = oci_connect($username, $password, $connection_string);
