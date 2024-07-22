@@ -390,9 +390,9 @@ END;
 --FOTO
 --------------------------------------------------------------------------------
 CREATE OR REPLACE VIEW v_dueño_foto AS
-SELECT f.ID_FOTO, f.MES, f.ANNO, f.RUTA_FOTO, u.NOMBRE_USUARIO
+SELECT f.ID_FOTO, f.MES, f.ANNO, f.RUTA_FOTO, u.NOMBRE
 FROM FOTOS f
-JOIN USUARIOS u ON f.ID_USUARIO = u.ID_USUARIO;
+JOIN USUARIO u ON f.ID_USUARIO = u.ID_USUARIO;
 /
  
 --------------------------------------------------------------------------------
@@ -407,7 +407,7 @@ RETURN VARCHAR2
 IS
     v_nombre_usuario VARCHAR2(100);
 BEGIN
-    SELECT u.NOMBRE_USUARIO
+    SELECT u.NOMBRE
     INTO v_nombre_usuario
     FROM FOTOS f
     JOIN USUARIOS u ON f.ID_USUARIO= u.ID_USUARIO
