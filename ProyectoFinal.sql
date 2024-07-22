@@ -71,7 +71,7 @@ CREATE TABLE PAGOS (
 INSERT INTO roles (id_rol, rol) VALUES (1, 'admin');
 INSERT INTO roles (id_rol, rol) VALUES (2, 'user');
 
--- constraints PK
+-- Constraints PK
 
 ALTER TABLE ROLES ADD CONSTRAINT pk_roles PRIMARY KEY (ID_ROL);
 
@@ -89,7 +89,7 @@ ALTER TABLE FOTOS ADD CONSTRAINT pk_fotos PRIMARY KEY (ID_FOTO);
 
 ALTER TABLE PAGOS ADD CONSTRAINT pk_pagos PRIMARY KEY (ID_PAGO);
 
---constraints FK
+--Constraints FK
 
 ALTER TABLE USUARIO ADD CONSTRAINT fk_usuario_roles FOREIGN KEY (ID_ROL) REFERENCES ROLES (ID_ROL);
 
@@ -105,7 +105,7 @@ ALTER TABLE FOTOS ADD CONSTRAINT fk_fotos_usuario FOREIGN KEY (ID_USUARIO) REFER
 
 ALTER TABLE PAGOS ADD CONSTRAINT fk_pagos_usuario FOREIGN KEY (ID_USUARIO) REFERENCES USUARIO (ID_USUARIO);
 
---auto increment
+--Auto increment
 CREATE SEQUENCE seq_usuario_id START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_detalle_id START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_rutina_id START WITH 1 INCREMENT BY 1;
@@ -114,7 +114,7 @@ CREATE SEQUENCE seq_notaMes_id START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_foto_id START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_pagos_id START WITH 1 INCREMENT BY 1;
 
--- triggers para el auto-increment
+-- Triggers para el auto-increment
 CREATE OR REPLACE TRIGGER trg_usuario_id
 BEFORE INSERT ON USUARIO
 FOR EACH ROW
@@ -185,12 +185,241 @@ BEGIN
 END;
 /
 
--- procedimientos almacenados 
+--------------------------------------------------------------------------------
+-- Procedimientos almacenados 
+/*set serveroutput on;*/
+--------------------------------------------------------------------------------
+--NOTA MES
+--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE insert_notames (
+    p_id_check IN NUMBER,
+    p_nota_mensual IN CLOB,
+    p_id_foto IN NUMBER,
+    p_result OUT VARCHAR2
+) AS
+BEGIN
+-- Inserta un nuevo registro en la tabla NOTAMES
+    INSERT INTO NOTAMES (ID_CHECK, NOTA_MENSUAL, ID_FOTO)
+    VALUES (p_id_check, p_nota_mensual, p_id_foto);
+    
+    p_result := 'Insertado correctamente';
+EXCEPTION
+-- Captura cualquier error que ocurra durante la inserción
+    WHEN OTHERS THEN
+        p_result := SQLERRM;
+END;
+/
 
--- vistas 
+--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE update_notames (
+    p_id_check IN NUMBER,
+    p_nota_mensual IN CLOB,
+    p_id_foto IN NUMBER,
+    p_result OUT VARCHAR2
+) AS
+BEGIN
+-- Actualiza el registro en la tabla NOTAMES
+    UPDATE NOTAMES
+    SET NOTA_MENSUAL = p_nota_mensual,
+        ID_FOTO = p_id_foto
+    WHERE ID_CHECK = p_id_check;
+    
+    p_result := 'Actualizado correctamente';
+EXCEPTION
+-- Captura cualquier error que ocurra durante la actualización
+    WHEN OTHERS THEN
+        p_result := SQLERRM;
+END;
+/
 
--- funciones
+--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE delete_notames (
+    p_id_check IN NUMBER,
+    p_result OUT VARCHAR2
+) AS
+BEGIN
+ -- Elimina el registro de la tabla NOTAMES
+    DELETE FROM NOTAMES
+    WHERE ID_CHECK = p_id_check;
+    
+    p_result := 'Eliminado correctamente';
+EXCEPTION
+-- Captura cualquier error que ocurra durante la eliminación
+    WHEN OTHERS THEN
+        p_result := SQLERRM;
+END;
+/
 
--- paquetes
+--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE get_notames (
+    p_id_check IN NUMBER
+) AS
+    CURSOR notames_cursor IS
+        SELECT ID_CHECK, NOTA_MENSUAL, ID_FOTO
+        FROM NOTAMES
+        WHERE ID_CHECK = p_id_check;
+    
+-- Variables para almacenar el resultado
+    v_id_check NUMBER;
+    v_nota_mensual CLOB;
+    v_id_foto NUMBER;
+BEGIN
+-- Abre el cursor
+    OPEN notames_cursor;
+    
+    LOOP
+        FETCH notames_cursor INTO v_id_check, v_nota_mensual, v_id_foto;
+        EXIT WHEN notames_cursor%NOTFOUND;
+        
+--resultados
 
--- cursores
+        DBMS_OUTPUT.PUT_LINE('ID_CHECK: ' || v_id_check || ', NOTA_MENSUAL: ' || v_nota_mensual || ', ID_FOTO: ' || v_id_foto);
+    END LOOP;
+    
+    CLOSE notames_cursor;
+EXCEPTION
+    WHEN OTHERS THEN
+--Obtener el msj de error
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+
+--------------------------------------------------------------------------------
+--FOTOS
+--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE insert_fotos (
+    p_id_foto IN NUMBER,
+    p_mes IN VARCHAR2,
+    p_anno IN VARCHAR2,
+    p_ruta_foto IN VARCHAR2,
+    p_id_usuario IN NUMBER,
+    p_result OUT VARCHAR2
+) AS
+BEGIN
+-- Inserta un nuevo registro en la tabla FOTOS
+    INSERT INTO FOTOS (ID_FOTO, MES, ANNO, RUTA_FOTO, ID_USUARIO)
+    VALUES (p_id_foto, p_mes, p_anno, p_ruta_foto, p_id_usuario);
+    
+    p_result := 'Insertado correctamente';
+EXCEPTION
+-- Captura cualquier error que ocurra durante la inserción
+    WHEN OTHERS THEN
+        p_result := SQLERRM;
+END;
+/
+
+--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE update_fotos (
+    p_id_foto IN NUMBER,
+    p_mes IN VARCHAR2,
+    p_anno IN VARCHAR2,
+    p_ruta_foto IN VARCHAR2,
+    p_id_usuario IN NUMBER,
+    p_result OUT VARCHAR2
+) AS
+BEGIN
+-- Actualiza el registro en la tabla FOTOS
+    UPDATE FOTOS
+    SET MES = p_mes,
+        ANNO = p_anno,
+        RUTA_FOTO = p_ruta_foto,
+        ID_USUARIO = p_id_usuario
+    WHERE ID_FOTO = p_id_foto;
+    
+    p_result := 'Actualizado correctamente';
+EXCEPTION
+-- Captura cualquier error
+    WHEN OTHERS THEN
+        p_result := SQLERRM;
+END;
+/
+
+--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE delete_fotos (
+    p_id_foto IN NUMBER,
+    p_result OUT VARCHAR2
+) AS
+BEGIN
+-- Elimina el registro de la tabla FOTOS
+    DELETE FROM FOTOS
+    WHERE ID_FOTO = p_id_foto;
+    
+    p_result := 'Eliminado correctamente';
+EXCEPTION
+    WHEN OTHERS THEN
+        p_result := SQLERRM;
+END;
+/
+
+--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE get_fotos (
+    p_id_foto IN NUMBER
+) AS
+    CURSOR fotos_cursor IS
+        SELECT ID_FOTO, MES, ANNO, RUTA_FOTO, ID_USUARIO
+        FROM FOTOS
+        WHERE ID_FOTO = p_id_foto;
+    
+    v_id_foto NUMBER;
+    v_mes VARCHAR2(50);
+    v_anno VARCHAR2(50);
+    v_ruta_foto VARCHAR2(250);
+    v_id_usuario NUMBER;
+BEGIN
+-- CURSOR
+    OPEN fotos_cursor;
+    LOOP
+        FETCH fotos_cursor INTO v_id_foto, v_mes, v_anno, v_ruta_foto, v_id_usuario;
+        EXIT WHEN fotos_cursor%NOTFOUND;
+        
+        DBMS_OUTPUT.PUT_LINE('ID_FOTO: ' || v_id_foto || ', MES: ' || v_mes || ', ANNO: ' || v_anno || ', RUTA_FOTO: ' || v_ruta_foto || ', ID_USUARIO: ' || v_id_usuario);
+    END LOOP;
+    
+-- Cierra el cursor
+    CLOSE fotos_cursor;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+--------------------------------------------------------------------------------
+-- Vistas
+--------------------------------------------------------------------------------
+--FOTO
+--------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_dueño_foto AS
+SELECT f.ID_FOTO, f.MES, f.ANNO, f.RUTA_FOTO, u.NOMBRE_USUARIO
+FROM FOTOS f
+JOIN USUARIOS u ON f.ID_USUARIO = u.ID_USUARIO;
+/
+ 
+--------------------------------------------------------------------------------
+-- Funciones
+--------------------------------------------------------------------------------
+--FOTO
+--------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION get_dueño_foto(
+p_id_foto IN NUMBER
+)
+RETURN VARCHAR2
+IS
+    v_nombre_usuario VARCHAR2(100);
+BEGIN
+    SELECT u.NOMBRE_USUARIO
+    INTO v_nombre_usuario
+    FROM FOTOS f
+    JOIN USUARIOS u ON f.ID_USUARIO= u.ID_USUARIO
+    WHERE f.ID_FOTO = p_id_foto;
+
+    RETURN v_nombre_usuario;
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN 'Error: ' || SQLERRM;
+END;
+/
+
+-- Paquetes
+
+-- Cursores
