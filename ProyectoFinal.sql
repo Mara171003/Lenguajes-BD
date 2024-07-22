@@ -1,5 +1,4 @@
 --creacion de tablas
-
 CREATE TABLE ROLES (
     ID_ROL INT NOT NULL,
     ROL VARCHAR2(20) NOT NULL
@@ -66,6 +65,11 @@ CREATE TABLE PAGOS (
     ESTADO VARCHAR2(20),
     ID_USUARIO INT
 );
+
+-- insert roles
+
+INSERT INTO roles (id_rol, rol) VALUES (1, 'admin');
+INSERT INTO roles (id_rol, rol) VALUES (2, 'user');
 
 -- constraints PK
 
@@ -181,4 +185,12 @@ BEGIN
 END;
 /
 
+-- procedimientos almacenados 
 
+-- vistas 
+
+-- funciones
+
+-- paquetes
+
+-- cursores
