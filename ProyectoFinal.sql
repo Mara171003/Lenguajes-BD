@@ -420,6 +420,25 @@ EXCEPTION
 END;
 /
 
+CREATE OR REPLACE FUNCTION obtener_nota_foto(p_id_foto INT) 
+RETURN CLOB 
+IS
+    v_nota CLOB;
+BEGIN
+    SELECT nm.nota_mensual
+    INTO v_nota
+    FROM notames nm
+    JOIN fotos f ON nm.id_usuario = f.id_usuario
+    WHERE f.id_foto = p_id_foto;
+
+    RETURN v_nota;
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN 'Ocurrió un error al obtener la nota de la foto.';
+END;
+/
+
+
 -- Paquetes
 
 -- Cursores
