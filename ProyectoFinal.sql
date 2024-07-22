@@ -189,6 +189,126 @@ END;
 -- Procedimientos almacenados 
 /*set serveroutput on;*/
 --------------------------------------------------------------------------------
+--USUARIO
+--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE create_usuario (
+    p_id_usuario IN USUARIO.ID_USUARIO%TYPE,
+    p_nombre IN USUARIO.NOMBRE%TYPE,
+    p_primer_apellido IN USUARIO.PRIMER_APELLIDO%TYPE,
+    p_segundo_apellido IN USUARIO.SEGUNDO_APELLIDO%TYPE,
+    p_correo IN USUARIO.CORREO%TYPE,
+    p_tipo_suscripcion IN USUARIO.TIPO_SUSCRIPCION%TYPE,
+    p_id_rol IN USUARIO.ID_ROL%TYPE,
+    p_password IN USUARIO.PASSWORD%TYPE
+) AS
+BEGIN
+    INSERT INTO USUARIO (ID_USUARIO, NOMBRE, PRIMER_APELLIDO, SEGUNDO_APELLIDO, CORREO, TIPO_SUSCRIPCION, ID_ROL, PASSWORD)
+    VALUES (p_id_usuario, p_nombre, p_primer_apellido, p_segundo_apellido, p_correo, p_tipo_suscripcion, p_id_rol, p_password);
+END;
+/
+CREATE OR REPLACE PROCEDURE read_usuario (
+    p_id_usuario IN USUARIO.ID_USUARIO%TYPE,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_cursor FOR
+    SELECT * FROM USUARIO WHERE ID_USUARIO = p_id_usuario;
+END;
+/
+CREATE OR REPLACE PROCEDURE update_usuario (
+    p_id_usuario IN USUARIO.ID_USUARIO%TYPE,
+    p_nombre IN USUARIO.NOMBRE%TYPE,
+    p_primer_apellido IN USUARIO.PRIMER_APELLIDO%TYPE,
+    p_segundo_apellido IN USUARIO.SEGUNDO_APELLIDO%TYPE,
+    p_correo IN USUARIO.CORREO%TYPE,
+    p_tipo_suscripcion IN USUARIO.TIPO_SUSCRIPCION%TYPE,
+    p_id_rol IN USUARIO.ID_ROL%TYPE,
+    p_password IN USUARIO.PASSWORD%TYPE
+) AS
+BEGIN
+    UPDATE USUARIO
+    SET NOMBRE = p_nombre,
+        PRIMER_APELLIDO = p_primer_apellido,
+        SEGUNDO_APELLIDO = p_segundo_apellido,
+        CORREO = p_correo,
+        TIPO_SUSCRIPCION = p_tipo_suscripcion,
+        ID_ROL = p_id_rol,
+        PASSWORD = p_password
+    WHERE ID_USUARIO = p_id_usuario;
+END;
+/
+CREATE OR REPLACE PROCEDURE delete_usuario (
+    p_id_usuario IN USUARIO.ID_USUARIO%TYPE
+) AS
+BEGIN
+    DELETE FROM USUARIO WHERE ID_USUARIO = p_id_usuario;
+END;
+/
+
+--------------------------------------------------------------------------------
+--DETALLES USUARIO
+--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE create_detalles_usuario (
+    p_id_detalle IN DETALLES_USUARIO.ID_DETALLE%TYPE,
+    p_fecha_nacimiento IN DETALLES_USUARIO.FECHA_NACIMIENTO%TYPE,
+    p_altura_persona IN DETALLES_USUARIO.ALTURA_PERSONA%TYPE,
+    p_peso_persona IN DETALLES_USUARIO.PESO_PERSONA%TYPE,
+    p_lesiones IN DETALLES_USUARIO.LESIONES%TYPE,
+    p_medicamentos IN DETALLES_USUARIO.MEDICAMENTOS%TYPE,
+    p_embarazo IN DETALLES_USUARIO.EMBARAZO%TYPE,
+    p_cirugia IN DETALLES_USUARIO.CIRUGIA%TYPE,
+    p_objetivos IN DETALLES_USUARIO.OBJETIVOS%TYPE,
+    p_id_usuario IN DETALLES_USUARIO.ID_USUARIO%TYPE
+) AS
+BEGIN
+    INSERT INTO DETALLES_USUARIO (ID_DETALLE, FECHA_NACIMIENTO, ALTURA_PERSONA, PESO_PERSONA, LESIONES, MEDICAMENTOS, EMBARAZO, CIRUGIA, OBJETIVOS, ID_USUARIO)
+    VALUES (p_id_detalle, p_fecha_nacimiento, p_altura_persona, p_peso_persona, p_lesiones, p_medicamentos, p_embarazo, p_cirugia, p_objetivos, p_id_usuario);
+END;
+/
+CREATE OR REPLACE PROCEDURE read_detalles_usuario (
+    p_id_detalle IN DETALLES_USUARIO.ID_DETALLE%TYPE,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_cursor FOR
+    SELECT * FROM DETALLES_USUARIO WHERE ID_DETALLE = p_id_detalle;
+END;
+/
+CREATE OR REPLACE PROCEDURE update_detalles_usuario (
+    p_id_detalle IN DETALLES_USUARIO.ID_DETALLE%TYPE,
+    p_fecha_nacimiento IN DETALLES_USUARIO.FECHA_NACIMIENTO%TYPE,
+    p_altura_persona IN DETALLES_USUARIO.ALTURA_PERSONA%TYPE,
+    p_peso_persona IN DETALLES_USUARIO.PESO_PERSONA%TYPE,
+    p_lesiones IN DETALLES_USUARIO.LESIONES%TYPE,
+    p_medicamentos IN DETALLES_USUARIO.MEDICAMENTOS%TYPE,
+    p_embarazo IN DETALLES_USUARIO.EMBARAZO%TYPE,
+    p_cirugia IN DETALLES_USUARIO.CIRUGIA%TYPE,
+    p_objetivos IN DETALLES_USUARIO.OBJETIVOS%TYPE,
+    p_id_usuario IN DETALLES_USUARIO.ID_USUARIO%TYPE
+) AS
+BEGIN
+    UPDATE DETALLES_USUARIO
+    SET FECHA_NACIMIENTO = p_fecha_nacimiento,
+        ALTURA_PERSONA = p_altura_persona,
+        PESO_PERSONA = p_peso_persona,
+        LESIONES = p_lesiones,
+        MEDICAMENTOS = p_medicamentos,
+        EMBARAZO = p_embarazo,
+        CIRUGIA = p_cirugia,
+        OBJETIVOS = p_objetivos,
+        ID_USUARIO = p_id_usuario
+    WHERE ID_DETALLE = p_id_detalle;
+END;
+/
+CREATE OR REPLACE PROCEDURE delete_detalles_usuario (
+    p_id_detalle IN DETALLES_USUARIO.ID_DETALLE%TYPE
+) AS
+BEGIN
+    DELETE FROM DETALLES_USUARIO WHERE ID_DETALLE = p_id_detalle;
+END;
+/
+
+--------------------------------------------------------------------------------
 --NOTA MES
 --------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE insert_notames (
@@ -386,6 +506,35 @@ END;
 --------------------------------------------------------------------------------
 -- Vistas
 --------------------------------------------------------------------------------
+--USUARIO
+--------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW V_USUARIOS_DETALLES AS
+SELECT 
+    U.ID_USUARIO,
+    U.NOMBRE,
+    U.PRIMER_APELLIDO,
+    U.SEGUNDO_APELLIDO,
+    U.CORREO,
+    U.TIPO_SUSCRIPCION,
+    U.ID_ROL,
+    D.ID_DETALLE,
+    D.FECHA_NACIMIENTO,
+    D.ALTURA_PERSONA,
+    D.PESO_PERSONA,
+    D.LESIONES,
+    D.MEDICAMENTOS,
+    D.EMBARAZO,
+    D.CIRUGIA,
+    D.OBJETIVOS
+FROM 
+    USUARIO U
+LEFT JOIN 
+    DETALLES_USUARIO D
+ON 
+    U.ID_USUARIO = D.ID_USUARIO;
+/
+
+--------------------------------------------------------------------------------
 --FOTO
 --------------------------------------------------------------------------------
 CREATE OR REPLACE VIEW v_dueño_foto AS
@@ -440,3 +589,5 @@ END;
 -- Paquetes
 
 -- Cursores
+
+
