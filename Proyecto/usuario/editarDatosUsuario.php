@@ -1,41 +1,72 @@
 <?php
 session_start();
 
-//verificar si se accedió con login
-if (empty($_SESSION['usuario'])) { // si no hay una sesión usuario
-    header("location: usuario/vistaLogin.php"); // devolver al login
+// Verificar si se accedió con login
+if (empty($_SESSION['usuario'])) {
+    header("location: usuario/vistaLogin.php");
     exit();
 }
 
-$id = intval($_GET['id']); // Asegúrate de que el ID sea un entero
-
 include "../DAL/conexion.php";
 
-// Obtener la conexión
-$conn = Conecta();
+if (isset($_POST['btnActualizarDatos']) && $_POST['btnActualizarDatos'] === 'ok') {
+    $idDetalle = intval($_POST['id_detalle']);
+    $altura = $_POST['altura'];
+    $peso = $_POST['peso'];
+    $lesiones = $_POST['lesiones'];
+    $medicamentos = $_POST['medicamentos'];
+    $embarazo = $_POST['embarazo'];
+    $cirugia = $_POST['cirugia'];
+    $objetivos = $_POST['objetivos'];
+    $fechaNacimiento = $_POST['edad']; // Cambia el nombre del campo si es necesario
 
-// Consultas
-$queryDetalles = "SELECT * FROM detalles_usuario WHERE id_usuario = :id_usuario";
-$queryUsuario = "SELECT id_usuario, nombre, primer_apellido, segundo_apellido FROM usuario WHERE id_usuario = :id_usuario";
-$queryRutina = "SELECT id_rutina, nombre_rutina, dia_rutina FROM rutina WHERE id_usuario = :id_usuario";
-$queryPagos = "SELECT * FROM pagos WHERE id_usuario = :id_usuario";
+    // Obtener la conexión
+    $conn = Conecta();
 
-// Preparar y ejecutar las consultas
-$stidDetalles = oci_parse($conn, $queryDetalles);
-$stidUsuario = oci_parse($conn, $queryUsuario);
-$stidRutina = oci_parse($conn, $queryRutina);
-$stidPagos = oci_parse($conn, $queryPagos);
+    // Consulta para actualizar datos
+    $query = "UPDATE DETALLES_USUARIO
+              SET FECHA_NACIMIENTO = :fecha_nacimiento,
+                  ALTURA_PERSONA = :altura_persona,
+                  PESO_PERSONA = :peso_persona,
+                  LESIONES = :lesiones,
+                  MEDICAMENTOS = :medicamentos,
+                  EMBARAZO = :embarazo,
+                  CIRUGIA = :cirugia,
+                  OBJETIVOS = :objetivos
+              WHERE ID_DETALLE = :id_detalle";
 
-oci_bind_by_name($stidDetalles, ':id_usuario', $id);
-oci_bind_by_name($stidUsuario, ':id_usuario', $id);
-oci_bind_by_name($stidRutina, ':id_usuario', $id);
-oci_bind_by_name($stidPagos, ':id_usuario', $id);
+    // Preparar la consulta
+    $stid = oci_parse($conn, $query);
 
-oci_execute($stidDetalles);
-oci_execute($stidUsuario);
-oci_execute($stidRutina);
-oci_execute($stidPagos);
+    // Enlazar los parámetros
+    oci_bind_by_name($stid, ':fecha_nacimiento', $fechaNacimiento);
+    oci_bind_by_name($stid, ':altura_persona', $altura);
+    oci_bind_by_name($stid, ':peso_persona', $peso);
+    oci_bind_by_name($stid, ':lesiones', $lesiones);
+    oci_bind_by_name($stid, ':medicamentos', $medicamentos);
+    oci_bind_by_name($stid, ':embarazo', $embarazo);
+    oci_bind_by_name($stid, ':cirugia', $cirugia);
+    oci_bind_by_name($stid, ':objetivos', $objetivos);
+    oci_bind_by_name($stid, ':id_detalle', $idDetalle);
+
+    // Ejecutar la consulta
+    if (oci_execute($stid)) {
+        echo "Datos actualizados correctamente.";
+    } else {
+        $e = oci_error($stid);
+        echo "Error al actualizar datos: " . $e['message'];
+    }
+
+    // Liberar recursos y cerrar conexión
+    oci_free_statement($stid);
+    oci_close($conn);
+
+    // Redireccionar después de guardar
+    header("Location: ../index.php");
+    exit();
+}
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

@@ -2,12 +2,12 @@
 session_start();
 
 // Verificar si se accedió con login
-if (empty($_SESSION['usuario'])) { // Si no hay una sesión usuario
-    header("location: usuario/vistaLogin.php"); // Devolver al login
+if (empty($_SESSION['usuario'])) {
+    header("location: usuario/vistaLogin.php");
     exit();
 }
 
-include "../DAL/usuario.php";
+include "../DAL/conexion.php";
 
 if (isset($_POST['btnAgregarDatos']) && $_POST['btnAgregarDatos'] === 'ok') {
     $userId = $_SESSION['id'];
@@ -18,15 +18,47 @@ if (isset($_POST['btnAgregarDatos']) && $_POST['btnAgregarDatos'] === 'ok') {
     $embarazo = $_POST['embarazo'];
     $cirugia = $_POST['cirugia'];
     $objetivos = $_POST['objetivos'];
-    $edad = $_POST['edad'];
+    $fechaNacimiento = $_POST['edad']; // Cambia el nombre del campo si es necesario
 
-    // Llamar a la función para insertar datos
-    insertarDatosUsuario($userId, $altura, $peso, $lesiones, $medicamentos, $embarazo, $cirugia, $objetivos, $edad);
+    // Obtener la conexión
+    $conn = Conecta();
 
-    header("Location: ../index.php"); // Redireccionar después de guardar
+    // Consulta para insertar datos
+    $query = "INSERT INTO DETALLES_USUARIO (FECHA_NACIMIENTO, ALTURA_PERSONA, PESO_PERSONA, LESIONES, MEDICAMENTOS, EMBARAZO, CIRUGIA, OBJETIVOS, ID_USUARIO)
+              VALUES (:fecha_nacimiento, :altura_persona, :peso_persona, :lesiones, :medicamentos, :embarazo, :cirugia, :objetivos, :id_usuario)";
+
+    // Preparar la consulta
+    $stid = oci_parse($conn, $query);
+
+    // Enlazar los parámetros
+    oci_bind_by_name($stid, ':fecha_nacimiento', $fechaNacimiento);
+    oci_bind_by_name($stid, ':altura_persona', $altura);
+    oci_bind_by_name($stid, ':peso_persona', $peso);
+    oci_bind_by_name($stid, ':lesiones', $lesiones);
+    oci_bind_by_name($stid, ':medicamentos', $medicamentos);
+    oci_bind_by_name($stid, ':embarazo', $embarazo);
+    oci_bind_by_name($stid, ':cirugia', $cirugia);
+    oci_bind_by_name($stid, ':objetivos', $objetivos);
+    oci_bind_by_name($stid, ':id_usuario', $userId);
+
+    // Ejecutar la consulta
+    if (oci_execute($stid)) {
+        echo "Datos insertados correctamente.";
+    } else {
+        $e = oci_error($stid);
+        echo "Error al insertar datos: " . $e['message'];
+    }
+
+    // Liberar recursos y cerrar conexión
+    oci_free_statement($stid);
+    oci_close($conn);
+
+    // Redireccionar después de guardar
+    header("Location: ../index.php");
     exit();
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
