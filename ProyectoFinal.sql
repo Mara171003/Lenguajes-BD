@@ -50,6 +50,7 @@ CREATE TABLE NOTAMES (
     ID_FOTO INT
 );
 
+
 CREATE TABLE FOTOS (
     ID_FOTO INT NOT NULL,
     MES VARCHAR2(50) NOT NULL,
@@ -191,7 +192,7 @@ END;
 --------------------------------------------------------------------------------
 --USUARIO
 --------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE create_usuario (
+CREATE OR REPLACE PROCEDURE sp_create_usuario (
     p_id_usuario IN USUARIO.ID_USUARIO%TYPE,
     p_nombre IN USUARIO.NOMBRE%TYPE,
     p_primer_apellido IN USUARIO.PRIMER_APELLIDO%TYPE,
@@ -206,7 +207,7 @@ BEGIN
     VALUES (p_id_usuario, p_nombre, p_primer_apellido, p_segundo_apellido, p_correo, p_tipo_suscripcion, p_id_rol, p_password);
 END;
 /
-CREATE OR REPLACE PROCEDURE read_usuario (
+CREATE OR REPLACE PROCEDURE sp_read_usuario (
     p_id_usuario IN USUARIO.ID_USUARIO%TYPE,
     p_cursor OUT SYS_REFCURSOR
 ) AS
@@ -215,7 +216,7 @@ BEGIN
     SELECT * FROM USUARIO WHERE ID_USUARIO = p_id_usuario;
 END;
 /
-CREATE OR REPLACE PROCEDURE update_usuario (
+CREATE OR REPLACE PROCEDURE sp_update_usuario (
     p_id_usuario IN USUARIO.ID_USUARIO%TYPE,
     p_nombre IN USUARIO.NOMBRE%TYPE,
     p_primer_apellido IN USUARIO.PRIMER_APELLIDO%TYPE,
@@ -237,7 +238,7 @@ BEGIN
     WHERE ID_USUARIO = p_id_usuario;
 END;
 /
-CREATE OR REPLACE PROCEDURE delete_usuario (
+CREATE OR REPLACE PROCEDURE SP_delete_usuario (
     p_id_usuario IN USUARIO.ID_USUARIO%TYPE
 ) AS
 BEGIN
@@ -248,7 +249,7 @@ END;
 --------------------------------------------------------------------------------
 --DETALLES USUARIO
 --------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE create_detalles_usuario (
+CREATE OR REPLACE PROCEDURE sp_create_detalles_usuario (
     p_id_detalle IN DETALLES_USUARIO.ID_DETALLE%TYPE,
     p_fecha_nacimiento IN DETALLES_USUARIO.FECHA_NACIMIENTO%TYPE,
     p_altura_persona IN DETALLES_USUARIO.ALTURA_PERSONA%TYPE,
@@ -265,7 +266,7 @@ BEGIN
     VALUES (p_id_detalle, p_fecha_nacimiento, p_altura_persona, p_peso_persona, p_lesiones, p_medicamentos, p_embarazo, p_cirugia, p_objetivos, p_id_usuario);
 END;
 /
-CREATE OR REPLACE PROCEDURE read_detalles_usuario (
+CREATE OR REPLACE PROCEDURE sp_read_detalles_usuario (
     p_id_detalle IN DETALLES_USUARIO.ID_DETALLE%TYPE,
     p_cursor OUT SYS_REFCURSOR
 ) AS
@@ -274,7 +275,7 @@ BEGIN
     SELECT * FROM DETALLES_USUARIO WHERE ID_DETALLE = p_id_detalle;
 END;
 /
-CREATE OR REPLACE PROCEDURE update_detalles_usuario (
+CREATE OR REPLACE PROCEDURE sp_update_detalles_usuario (
     p_id_detalle IN DETALLES_USUARIO.ID_DETALLE%TYPE,
     p_fecha_nacimiento IN DETALLES_USUARIO.FECHA_NACIMIENTO%TYPE,
     p_altura_persona IN DETALLES_USUARIO.ALTURA_PERSONA%TYPE,
@@ -300,7 +301,7 @@ BEGIN
     WHERE ID_DETALLE = p_id_detalle;
 END;
 /
-CREATE OR REPLACE PROCEDURE delete_detalles_usuario (
+CREATE OR REPLACE PROCEDURE sp_delete_detalles_usuario (
     p_id_detalle IN DETALLES_USUARIO.ID_DETALLE%TYPE
 ) AS
 BEGIN
@@ -311,7 +312,7 @@ END;
 --------------------------------------------------------------------------------
 --NOTA MES
 --------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE insert_notames (
+CREATE OR REPLACE PROCEDURE sp_insert_notames (
     p_id_check IN NUMBER,
     p_nota_mensual IN CLOB,
     p_id_foto IN NUMBER,
@@ -324,14 +325,14 @@ BEGIN
     
     p_result := 'Insertado correctamente';
 EXCEPTION
--- Captura cualquier error que ocurra durante la inserción
+-- Captura cualquier error que ocurra durante la inserci?n
     WHEN OTHERS THEN
         p_result := SQLERRM;
 END;
 /
 
 --------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE update_notames (
+CREATE OR REPLACE PROCEDURE sp_update_notames (
     p_id_check IN NUMBER,
     p_nota_mensual IN CLOB,
     p_id_foto IN NUMBER,
@@ -346,14 +347,14 @@ BEGIN
     
     p_result := 'Actualizado correctamente';
 EXCEPTION
--- Captura cualquier error que ocurra durante la actualización
+-- Captura cualquier error que ocurra durante la actualizaci?n
     WHEN OTHERS THEN
         p_result := SQLERRM;
 END;
 /
 
 --------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE delete_notames (
+CREATE OR REPLACE PROCEDURE sp_delete_notames (
     p_id_check IN NUMBER,
     p_result OUT VARCHAR2
 ) AS
@@ -364,50 +365,48 @@ BEGIN
     
     p_result := 'Eliminado correctamente';
 EXCEPTION
--- Captura cualquier error que ocurra durante la eliminación
+-- Captura cualquier error que ocurra durante la eliminaci?n
     WHEN OTHERS THEN
         p_result := SQLERRM;
 END;
 /
 
 --------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE get_notames (
+CREATE OR REPLACE PROCEDURE sp_get_notames (
     p_id_check IN NUMBER
 ) AS
+    -- Declarar el cursor
     CURSOR notames_cursor IS
-        SELECT ID_CHECK, NOTA_MENSUAL, ID_FOTO
-        FROM NOTAMES
+        SELECT ID_CHECK, NOTA_MENSUAL, ID_FOTO FROM NOTAMES
         WHERE ID_CHECK = p_id_check;
-    
--- Variables para almacenar el resultado
+
     v_id_check NUMBER;
     v_nota_mensual CLOB;
     v_id_foto NUMBER;
 BEGIN
--- Abre el cursor
+    -- Abre el cursor
     OPEN notames_cursor;
-    
+
     LOOP
         FETCH notames_cursor INTO v_id_check, v_nota_mensual, v_id_foto;
         EXIT WHEN notames_cursor%NOTFOUND;
---resultados
 
         DBMS_OUTPUT.PUT_LINE('ID_CHECK: ' || v_id_check || ', NOTA_MENSUAL: ' || v_nota_mensual || ', ID_FOTO: ' || v_id_foto);
     END LOOP;
-    
+
+    -- Cierra el cursor
     CLOSE notames_cursor;
 EXCEPTION
     WHEN OTHERS THEN
---Obtener el msj de error
+        -- Obtiene el mensaje de error
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
 END;
 /
 
-
 --------------------------------------------------------------------------------
 --FOTOS
 --------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE insert_fotos (
+CREATE OR REPLACE PROCEDURE sp_insert_fotos (
     p_id_foto IN NUMBER,
     p_mes IN VARCHAR2,
     p_anno IN VARCHAR2,
@@ -422,14 +421,14 @@ BEGIN
     
     p_result := 'Insertado correctamente';
 EXCEPTION
--- Captura cualquier error que ocurra durante la inserción
+-- Captura cualquier error que ocurra durante la inserci?n
     WHEN OTHERS THEN
         p_result := SQLERRM;
 END;
 /
 
 --------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE update_fotos (
+CREATE OR REPLACE PROCEDURE sp_update_fotos (
     p_id_foto IN NUMBER,
     p_mes IN VARCHAR2,
     p_anno IN VARCHAR2,
@@ -455,7 +454,7 @@ END;
 /
 
 --------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE delete_fotos (
+CREATE OR REPLACE PROCEDURE sp_delete_fotos (
     p_id_foto IN NUMBER,
     p_result OUT VARCHAR2
 ) AS
@@ -472,7 +471,7 @@ END;
 /
 
 --------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE get_fotos (
+CREATE OR REPLACE PROCEDURE sp_get_fotos (
     p_id_foto IN NUMBER
 ) AS
     CURSOR fotos_cursor IS
@@ -537,7 +536,7 @@ ON
 --------------------------------------------------------------------------------
 --FOTO
 --------------------------------------------------------------------------------
-CREATE OR REPLACE VIEW v_dueño_foto AS
+CREATE OR REPLACE VIEW v_dueno_foto AS
 SELECT f.ID_FOTO, f.MES, f.ANNO, f.RUTA_FOTO, u.NOMBRE
 FROM FOTOS f
 JOIN USUARIO u ON f.ID_USUARIO = u.ID_USUARIO;
@@ -548,7 +547,7 @@ JOIN USUARIO u ON f.ID_USUARIO = u.ID_USUARIO;
 --------------------------------------------------------------------------------
 --FOTO
 --------------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION get_dueño_foto(
+CREATE OR REPLACE FUNCTION fn_get_dueno_foto(
 p_id_foto IN NUMBER
 )
 RETURN VARCHAR2
@@ -558,7 +557,7 @@ BEGIN
     SELECT u.NOMBRE
     INTO v_nombre_usuario
     FROM FOTOS f
-    JOIN USUARIOS u ON f.ID_USUARIO= u.ID_USUARIO
+    JOIN USUARIO u ON f.ID_USUARIO= u.ID_USUARIO
     WHERE f.ID_FOTO = p_id_foto;
 
     RETURN v_nombre_usuario;
@@ -581,13 +580,59 @@ BEGIN
     RETURN v_nota;
 EXCEPTION
     WHEN OTHERS THEN
-        RETURN 'Ocurrió un error al obtener la nota de la foto.';
+        RETURN 'Ocurri? un error al obtener la nota de la foto.';
 END;
 /
 
 
+--------------------------------------------------SP rutina ------------------------------------------------------------------
+--insertar --
+CREATE OR REPLACE PROCEDURE sp_insertar_rutina(
+    p_nombre_rutina IN RUTINA.NOMBRE_RUTINA%TYPE,
+    p_dia_rutina IN RUTINA.DIA_RUTINA%TYPE,
+    p_id_usuario IN RUTINA.ID_USUARIO%TYPE
+) IS
+BEGIN
+    INSERT INTO RUTINA (NOMBRE_RUTINA, DIA_RUTINA, ID_USUARIO)
+    VALUES (p_nombre_rutina, p_dia_rutina, p_id_usuario);
+END;
+/
+
+--consulta --
+CREATE OR REPLACE PROCEDURE sp_consultar_rutina(
+    p_id_usuario IN RUTINA.ID_USUARIO%TYPE,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_cursor FOR
+    SELECT * FROM RUTINA WHERE ID_USUARIO = p_id_usuario;
+END;
+/
+
+--editar --
+CREATE OR REPLACE PROCEDURE sp_actualizar_rutina(
+    p_nombre_rutina IN RUTINA.NOMBRE_RUTINA%TYPE,
+    p_dia_rutina IN RUTINA.DIA_RUTINA%TYPE,
+    p_id_rutina IN RUTINA.ID_RUTINA%TYPE
+) IS
+BEGIN
+    UPDATE RUTINA
+    SET NOMBRE_RUTINA = p_nombre_rutina,
+        DIA_RUTINA = p_dia_rutina
+    WHERE ID_RUTINA = p_id_rutina;
+END;
+/
+
+-- eliminar --
+CREATE OR REPLACE PROCEDURE sp_eliminar_rutina(
+    p_id_rutina IN RUTINA.ID_RUTINA%TYPE
+) IS
+BEGIN
+    DELETE FROM RUTINA
+    WHERE ID_RUTINA = p_id_rutina;
+END;
+/
+
 -- Paquetes
 
 -- Cursores
-
-
