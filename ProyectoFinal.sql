@@ -325,7 +325,7 @@ BEGIN
     
     p_result := 'Insertado correctamente';
 EXCEPTION
--- Captura cualquier error que ocurra durante la inserción
+-- Captura cualquier error que ocurra durante la inserciï¿½n
     WHEN OTHERS THEN
         p_result := SQLERRM;
 END;
@@ -347,7 +347,7 @@ BEGIN
     
     p_result := 'Actualizado correctamente';
 EXCEPTION
--- Captura cualquier error que ocurra durante la actualización
+-- Captura cualquier error que ocurra durante la actualizaciï¿½n
     WHEN OTHERS THEN
         p_result := SQLERRM;
 END;
@@ -365,7 +365,7 @@ BEGIN
     
     p_result := 'Eliminado correctamente';
 EXCEPTION
--- Captura cualquier error que ocurra durante la eliminación
+-- Captura cualquier error que ocurra durante la eliminaciï¿½n
     WHEN OTHERS THEN
         p_result := SQLERRM;
 END;
@@ -421,7 +421,7 @@ BEGIN
     
     p_result := 'Insertado correctamente';
 EXCEPTION
--- Captura cualquier error que ocurra durante la inserción
+-- Captura cualquier error que ocurra durante la inserciï¿½n
     WHEN OTHERS THEN
         p_result := SQLERRM;
 END;
@@ -536,7 +536,7 @@ ON
 --------------------------------------------------------------------------------
 --FOTO
 --------------------------------------------------------------------------------
-CREATE OR REPLACE VIEW v_dueño_foto AS
+CREATE OR REPLACE VIEW v_dueï¿½o_foto AS
 SELECT f.ID_FOTO, f.MES, f.ANNO, f.RUTA_FOTO, u.NOMBRE
 FROM FOTOS f
 JOIN USUARIO u ON f.ID_USUARIO = u.ID_USUARIO;
@@ -547,7 +547,7 @@ JOIN USUARIO u ON f.ID_USUARIO = u.ID_USUARIO;
 --------------------------------------------------------------------------------
 --FOTO
 --------------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION get_dueño_foto(
+CREATE OR REPLACE FUNCTION get_dueï¿½o_foto(
 p_id_foto IN NUMBER
 )
 RETURN VARCHAR2
@@ -580,10 +580,58 @@ BEGIN
     RETURN v_nota;
 EXCEPTION
     WHEN OTHERS THEN
-        RETURN 'Ocurrió un error al obtener la nota de la foto.';
+        RETURN 'Ocurriï¿½ un error al obtener la nota de la foto.';
 END;
 /
 
+
+--------------------------------------------------SP rutina ------------------------------------------------------------------
+--insertar --
+CREATE OR REPLACE PROCEDURE sp_insertar_rutina(
+    p_nombre_rutina IN RUTINA.NOMBRE_RUTINA%TYPE,
+    p_dia_rutina IN RUTINA.DIA_RUTINA%TYPE,
+    p_id_usuario IN RUTINA.ID_USUARIO%TYPE
+) IS
+BEGIN
+    INSERT INTO RUTINA (NOMBRE_RUTINA, DIA_RUTINA, ID_USUARIO)
+    VALUES (p_nombre_rutina, p_dia_rutina, p_id_usuario);
+END;
+/
+
+--consulta --
+CREATE OR REPLACE PROCEDURE sp_consultar_rutina(
+    p_id_usuario IN RUTINA.ID_USUARIO%TYPE,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_cursor FOR
+    SELECT * FROM RUTINA WHERE ID_USUARIO = p_id_usuario;
+END;
+/
+
+--editar --
+CREATE OR REPLACE PROCEDURE sp_actualizar_rutina(
+    p_nombre_rutina IN RUTINA.NOMBRE_RUTINA%TYPE,
+    p_dia_rutina IN RUTINA.DIA_RUTINA%TYPE,
+    p_id_rutina IN RUTINA.ID_RUTINA%TYPE
+) IS
+BEGIN
+    UPDATE RUTINA
+    SET NOMBRE_RUTINA = p_nombre_rutina,
+        DIA_RUTINA = p_dia_rutina
+    WHERE ID_RUTINA = p_id_rutina;
+END;
+/
+
+-- eliminar --
+CREATE OR REPLACE PROCEDURE sp_eliminar_rutina(
+    p_id_rutina IN RUTINA.ID_RUTINA%TYPE
+) IS
+BEGIN
+    DELETE FROM RUTINA
+    WHERE ID_RUTINA = p_id_rutina;
+END;
+/
 
 -- Paquetes
 
