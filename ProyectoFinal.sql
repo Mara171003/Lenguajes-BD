@@ -50,6 +50,7 @@ CREATE TABLE NOTAMES (
     ID_FOTO INT
 );
 
+
 CREATE TABLE FOTOS (
     ID_FOTO INT NOT NULL,
     MES VARCHAR2(50) NOT NULL,
@@ -374,35 +375,33 @@ END;
 CREATE OR REPLACE PROCEDURE get_notames (
     p_id_check IN NUMBER
 ) AS
+    -- Declarar el cursor
     CURSOR notames_cursor IS
-        SELECT ID_CHECK, NOTA_MENSUAL, ID_FOTO
-        FROM NOTAMES
+        SELECT ID_CHECK, NOTA_MENSUAL, ID_FOTO FROM NOTAMES
         WHERE ID_CHECK = p_id_check;
-    
--- Variables para almacenar el resultado
+
     v_id_check NUMBER;
     v_nota_mensual CLOB;
     v_id_foto NUMBER;
 BEGIN
--- Abre el cursor
+    -- Abre el cursor
     OPEN notames_cursor;
-    
+
     LOOP
         FETCH notames_cursor INTO v_id_check, v_nota_mensual, v_id_foto;
         EXIT WHEN notames_cursor%NOTFOUND;
---resultados
 
         DBMS_OUTPUT.PUT_LINE('ID_CHECK: ' || v_id_check || ', NOTA_MENSUAL: ' || v_nota_mensual || ', ID_FOTO: ' || v_id_foto);
     END LOOP;
-    
+
+    -- Cierra el cursor
     CLOSE notames_cursor;
 EXCEPTION
     WHEN OTHERS THEN
---Obtener el msj de error
+        -- Obtiene el mensaje de error
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
 END;
 /
-
 
 --------------------------------------------------------------------------------
 --FOTOS
@@ -558,7 +557,7 @@ BEGIN
     SELECT u.NOMBRE
     INTO v_nombre_usuario
     FROM FOTOS f
-    JOIN USUARIOS u ON f.ID_USUARIO= u.ID_USUARIO
+    JOIN USUARIO u ON f.ID_USUARIO= u.ID_USUARIO
     WHERE f.ID_FOTO = p_id_foto;
 
     RETURN v_nombre_usuario;
@@ -589,5 +588,3 @@ END;
 -- Paquetes
 
 -- Cursores
-
-
