@@ -24,7 +24,7 @@ CREATE TABLE DETALLES_USUARIO (
     MEDICAMENTOS VARCHAR2(100),
     EMBARAZO VARCHAR2(50),
     CIRUGIA VARCHAR2(200),
-    OBJETIVOS CLOB,
+    OBJETIVOS VARCHAR2(255),
     ID_USUARIO INT NOT NULL
 );
 
@@ -399,7 +399,7 @@ BEGIN
     
     p_result := 'Insertado correctamente';
 EXCEPTION
-    -- Captura cualquier error que ocurra durante la inserción
+    -- Captura cualquier error que ocurra durante la inserciï¿½n
     WHEN OTHERS THEN
         p_result := SQLERRM;
 END;
@@ -418,7 +418,7 @@ BEGIN
     
     p_result := 'Actualizado correctamente';
 EXCEPTION
-    -- Captura cualquier error que ocurra durante la actualización
+    -- Captura cualquier error que ocurra durante la actualizaciï¿½n
     WHEN OTHERS THEN
         p_result := SQLERRM;
 END;
@@ -435,7 +435,7 @@ BEGIN
     
     p_result := 'Eliminado correctamente';
 EXCEPTION
-    -- Captura cualquier error que ocurra durante la eliminación
+    -- Captura cualquier error que ocurra durante la eliminaciï¿½n
     WHEN OTHERS THEN
         p_result := SQLERRM;
 END;
