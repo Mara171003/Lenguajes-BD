@@ -14,18 +14,10 @@ include "../DAL/conexion.php";
 // Obtener la conexión
 $conn = Conecta();
 
-// Consultas
-//$queryPagos = "SELECT * FROM pagos WHERE id_usuario = :id_usuario";
+// usuario
 $queryViewUsuario = "SELECT * FROM V_USUARIOS_DETALLES WHERE ID_USUARIO = :ID_USUARIO";
-
-// Preparar y ejecutar las consultas
-//$stidPagos = oci_parse($conn, $queryPagos);
 $stidUsuario = oci_parse($conn, $queryViewUsuario);
-
 oci_bind_by_name($stidUsuario, ':ID_USUARIO', $id);
-//oci_bind_by_name($stidPagos, ':id_usuario', $id);
-
-//oci_execute($stidPagos);
 ?>
 
 <!DOCTYPE html>
@@ -52,7 +44,6 @@ oci_bind_by_name($stidUsuario, ':ID_USUARIO', $id);
     <?php
     include '../templates/header.php';
 
-    //$pagos = oci_fetch_object($stidPagos);
     oci_execute($stidUsuario);
     while (($datos = oci_fetch_assoc($stidUsuario)) !=false) { 
         $nombre = $datos['NOMBRE'];
@@ -67,33 +58,59 @@ oci_bind_by_name($stidUsuario, ':ID_USUARIO', $id);
         $cirugia = $datos['CIRUGIA'];
         $objetivos = $datos['OBJETIVOS'];
         ?>
-        
+
     <div class="container mt-3 animation">
         <div class="mt-4 p-5 bg-dark text-white">
             <h1 class="text-center text-success">
                 <?=$nombre . " " . $primer_apellido . " " . $segundo_apellido ?>
             </h1><br>
             <hr class="border-top border-success opacity-25 my-2">
-            <!--PAGOS-->
             <div class="text-center">
 
-                <?php while (($datosPagos = oci_fetch_assoc($stidPagos)) !== false) {
-                $dia_pago = htmlspecialchars($datosPagos['DIA_PAGO']);
-                $monto = htmlspecialchars($datosPagos['MONTO']);
-                $estado = htmlspecialchars($datosPagos['ESTADO']);
+                <?php 
+                //-------------------------- PAGOS -----------------------------
+
+               // Consulta para llamar al procedimiento almacenado
+                $queryPagos = "BEGIN SP_GET_PAGOS(:P_ID_USUARIO, :P_CURSOR); END;";
+
+                // Preparar la llamada al procedimiento almacenado
+                $stidPagos = oci_parse($conn, $queryPagos);
+
+                // Crear un cursor para recibir los resultados
+                $p_cursor = oci_new_cursor($conn);
+
+                // Vincular los parámetros
+                oci_bind_by_name($stidPagos, ':P_ID_USUARIO', $id);
+                oci_bind_by_name($stidPagos, ':P_CURSOR', $p_cursor, -1, OCI_B_CURSOR);
+
+                // Ejecutar el procedimiento
+                oci_execute($stidPagos);
+
+                // Ejecutar el cursor
+                oci_execute($p_cursor);
+
+                $datosPagos = [];
+                while (($row = oci_fetch_assoc($p_cursor)) !== false) {
+                    $datosPagos[] = $row;
+                }
+                    
+                foreach ($datosPagos as $Pago) {
+                    $dia_pago = $Pago['DIA_PAGO'];
+                    $monto = $Pago['MONTO'];
+                    $estado = $Pago['ESTADO'];
                 ?>
 
                 <h4 class="text-success">Día de Pago:</h4>
                 <span>
-                    <h4><?= htmlspecialchars($pagos->DIA_PAGO) ?> de cada mes</h4>
+                    <h4><?= $dia_pago ?> de cada mes</h4>
                 </span>
                 <h4 class="text-success">Monto: </h4>
                 <span>
-                    <h4>CRC <?= htmlspecialchars($pagos->MONTO) ?></h4>
+                    <h4>CRC <?= $monto ?></h4>
                 </span>
                 <h4 class="text-success">Estado: </h4>
                 <span>
-                    <h4><span class="badge bg-primary"><?= htmlspecialchars($pagos->ESTADO) ?></span></h4>
+                    <h4><span class="badge bg-primary"><?= $estado ?></span></h4>
                 </span>
                 <?php } ?>
             </div>
@@ -152,7 +169,7 @@ oci_bind_by_name($stidUsuario, ':ID_USUARIO', $id);
     <?php } ?>
 
 
-    
+
     <!-- Botón editar datos -->
     <div class="container mt-3">
         <div class="mt-4 p-5">

@@ -654,6 +654,20 @@ END;
 /
 
 --------------------------------------------------------------------------------
+--PAGOS
+CREATE OR REPLACE PROCEDURE sp_get_pagos (
+    p_id_usuario IN NUMBER,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_cursor FOR
+    SELECT ID_PAGO, MONTO, DIA_PAGO, ESTADO
+    FROM PAGOS
+    WHERE ID_USUARIO = p_id_usuario;
+END;
+/
+
+--------------------------------------------------------------------------------
 -- Vistas
 --------------------------------------------------------------------------------
 --USUARIO
