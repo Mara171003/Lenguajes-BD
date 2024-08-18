@@ -31,7 +31,8 @@
         <!--SESSION-->
         <div class="text-white justify-content-between" id="headerP">
             <h3 class="col-6 mt-2 mx-3"><?php echo $_SESSION["usuario"];?></h3>
-            <a href="usuario/cerrarSesion.php" class="btn btn-primary my-2 mx-3 px-3"><i class="fa-solid fa-right-from-bracket"></i></a>
+            <a href="usuario/cerrarSesion.php" class="btn btn-primary my-2 mx-3 px-3"><i
+                    class="fa-solid fa-right-from-bracket"></i></a>
         </div>
         <!-- listado clientes -->
         <label class="p-5"> </label>
@@ -50,25 +51,37 @@
                     <?php
                     include "DAL/conexion.php";
                     $conn = conecta();
+                    
                     $adminId = $_SESSION['id'];
-                    $stid = null;
 
-                    if ($_SESSION['rol'] === '1') {
-                        // Para admin
-                        $query = "SELECT id_usuario, nombre, primer_apellido, tipo_suscripcion FROM usuario WHERE id_usuario != :adminId";
-                        $stid = oci_parse($conn, $query);
-                        oci_bind_by_name($stid, ':adminId', $adminId);
-                    } else {
-                        // Para usuarios
+                    if($_SESSION['rol']==='1'){//para admin
+                        $p_cursor_usuario = oci_new_cursor($conn);
+                        $queryUsuario = "BEGIN SP_GET_USUARIO_ADMIN(:P_ID_USUARIO, :P_CURSOR_USUARIO); END;";
+
+                        $stid = oci_parse($conn, $queryUsuario);
+                        oci_bind_by_name($stid, ':P_ID_USUARIO', $adminId);
+                        oci_bind_by_name($stid, ':P_CURSOR_USUARIO', $p_cursor_usuario, -1, OCI_B_CURSOR);
+
+                    }else{//para usuarios
+                        
                         $UserId = $_SESSION['id'];
-                        $query = "SELECT id_usuario, nombre, primer_apellido, tipo_suscripcion FROM usuario WHERE id_usuario = :UserId";
-                        $stid = oci_parse($conn, $query);
-                        oci_bind_by_name($stid, ':UserId', $UserId);
+                        $p_cursor_usuario = oci_new_cursor($conn);
+                        $queryUsuario = "BEGIN SP_GET_USUARIO(:P_ID_USUARIO, :P_CURSOR_USUARIO); END;";
+
+                        $stid = oci_parse($conn, $queryUsuario);
+                        oci_bind_by_name($stid, ':P_ID_USUARIO', $UserId);
+                        oci_bind_by_name($stid, ':P_CURSOR_USUARIO', $p_cursor_usuario, -1, OCI_B_CURSOR);
                     }
 
                     oci_execute($stid);
+                    oci_execute($p_cursor_usuario);
 
-                    while ($datos = oci_fetch_assoc($stid)) {
+                    $datosUsuario = [];
+                    while (($row = oci_fetch_assoc($p_cursor_usuario)) !== false) {
+                        $datosUsuario [] = $row;
+                    }
+
+                    foreach ($datosUsuario as $datos) {
                         $id_usuario = $datos['ID_USUARIO'];
                         $nombre = $datos['NOMBRE'];
                         $apellido = $datos['PRIMER_APELLIDO'];
@@ -89,14 +102,16 @@
                         <td><?= $apellido ?></td>
                         <td><?= $suscripcion ?></td>
                         <td>
-                            <a href="usuario/perfilUsuario.php?id=<?= $datos['ID_USUARIO'] ?>" class="btn btn-success"><i class="fa-solid fa-dumbbell ms-2 me-3"></i>Perfil</a>
-                            <a href="sistema/administracion.php?id=<?= $datos['ID_USUARIO'] ?>" class="btn btn-warning"><i class="fa-solid fa-desktop ms-2 me-3"></i>Sistema</a>
+                            <a href="usuario/perfilUsuario.php?id=<?= $datos['ID_USUARIO'] ?>"
+                                class="btn btn-success"><i class="fa-solid fa-dumbbell ms-2 me-3"></i>Perfil</a>
+                            <a href="sistema/administracion.php?id=<?= $datos['ID_USUARIO'] ?>"
+                                class="btn btn-warning"><i class="fa-solid fa-desktop ms-2 me-3"></i>Sistema</a>
                         </td>
                     </tr>
                     <?php
                     }
-
                     oci_free_statement($stid);
+                    oci_free_statement($p_cursor_usuario);
                     oci_close($conn);
                     ?>
                 </tbody>

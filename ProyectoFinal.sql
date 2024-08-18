@@ -244,31 +244,30 @@ END;
 /
 
 CREATE OR REPLACE PROCEDURE sp_get_usuario (
-    p_id_usuario IN NUMBER
+    p_id_usuario IN NUMBER,
+    p_cursor OUT SYS_REFCURSOR
 ) AS
-    CURSOR usuario_cursor IS
-        SELECT ID_USUARIO, NOMBRE, PRIMER_APELLIDO, SEGUNDO_APELLIDO, CORREO, TIPO_SUSCRIPCION, ID_ROL, PASSWORD
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_USUARIO, NOMBRE, PRIMER_APELLIDO, SEGUNDO_APELLIDO, CORREO, TIPO_SUSCRIPCION, ID_ROL
         FROM USUARIO
         WHERE ID_USUARIO = p_id_usuario;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
 
-    v_id_usuario NUMBER;
-    v_nombre VARCHAR2(100);
-    v_primer_apellido VARCHAR2(100);
-    v_segundo_apellido VARCHAR2(100);
-    v_correo VARCHAR2(100);
-    v_tipo_suscripcion VARCHAR2(50);
-    v_id_rol NUMBER;
-    v_password VARCHAR2(100);
+--** Para admin **--
+CREATE OR REPLACE PROCEDURE sp_get_usuario_admin (
+    p_id_usuario IN NUMBER,
+    p_cursor OUT SYS_REFCURSOR
+) AS
 BEGIN
-    OPEN usuario_cursor;
-    LOOP
-        FETCH usuario_cursor INTO v_id_usuario, v_nombre, v_primer_apellido, v_segundo_apellido, v_correo, v_tipo_suscripcion, v_id_rol, v_password;
-        EXIT WHEN usuario_cursor%NOTFOUND;
-
-        DBMS_OUTPUT.PUT_LINE('ID_USUARIO: ' || v_id_usuario || ', NOMBRE: ' || v_nombre || ', PRIMER_APELLIDO: ' || v_primer_apellido || ', SEGUNDO_APELLIDO: ' || v_segundo_apellido || ', CORREO: ' || v_correo || ', TIPO_SUSCRIPCION: ' || v_tipo_suscripcion || ', ID_ROL: ' || v_id_rol || ', PASSWORD: ' || v_password);
-    END LOOP;
-
-    CLOSE usuario_cursor;
+    OPEN p_cursor FOR
+        SELECT ID_USUARIO, NOMBRE, PRIMER_APELLIDO, SEGUNDO_APELLIDO, CORREO, TIPO_SUSCRIPCION, ID_ROL
+        FROM USUARIO
+        WHERE ID_USUARIO != p_id_usuario;
 EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);

@@ -131,6 +131,7 @@ $conn = Conecta();
                 <?php 
                 //cerrar cursor
                 oci_free_statement($p_cursor_pagos);
+                oci_free_statement($stidPagos);
                 } ?>
             </div>
         </div>
@@ -185,6 +186,7 @@ $conn = Conecta();
 
     <?php } 
     //cerrar cursor
+    oci_free_statement($stidUsuario);
     oci_free_statement($p_cursor_usuario);
     ?>
 
@@ -226,10 +228,5 @@ $conn = Conecta();
 </html>
 
 <?php
-// Liberar recursos y cerrar conexión
-oci_free_statement($stidDetalles);
-oci_free_statement($stidUsuario);
-oci_free_statement($stidRutina);
-oci_free_statement($stidPagos);
 oci_close($conn);
 ?>
