@@ -667,6 +667,23 @@ BEGIN
 END;
 /
 
+
+-------------------------------------------------------------------------------
+--SP llamar vista usuario detalles
+CREATE OR REPLACE PROCEDURE sp_get_v_usuario_detalles (
+    p_id_usuario IN NUMBER,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_cursor FOR
+    SELECT *
+    FROM V_USUARIOS_DETALLES
+    WHERE ID_USUARIO = p_id_usuario;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
 --------------------------------------------------------------------------------
 -- Vistas
 --------------------------------------------------------------------------------

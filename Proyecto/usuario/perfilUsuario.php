@@ -6,18 +6,12 @@ if (empty($_SESSION['usuario'])) { // si no hay una sesión usuario
     header("location: usuario/vistaLogin.php"); // devolver al login
     exit();
 }
-
 $id = intval($_GET['id']); // Asegúrate de que el ID sea un entero
 
 include "../DAL/conexion.php";
 
 // Obtener la conexión
 $conn = Conecta();
-
-// usuario
-$queryViewUsuario = "SELECT * FROM V_USUARIOS_DETALLES WHERE ID_USUARIO = :ID_USUARIO";
-$stidUsuario = oci_parse($conn, $queryViewUsuario);
-oci_bind_by_name($stidUsuario, ':ID_USUARIO', $id);
 ?>
 
 <!DOCTYPE html>
@@ -44,19 +38,42 @@ oci_bind_by_name($stidUsuario, ':ID_USUARIO', $id);
     <?php
     include '../templates/header.php';
 
+    //query
+    $queryDetalles = "BEGIN SP_GET_V_USUARIO_DETALLES(:P_ID_USUARIO, :P_CURSOR_USUARIO); END;";
+
+    $stidUsuario = oci_parse($conn, $queryDetalles);
+
+    // Crear un cursor para recibir los resultados tomados del cursor de sistema de oracle
+    $p_cursor_usuario = oci_new_cursor($conn);
+
+    // Vincular los parámetros
+    oci_bind_by_name($stidUsuario, ':P_ID_USUARIO', $id);
+    oci_bind_by_name($stidUsuario, ':P_CURSOR_USUARIO', $p_cursor_usuario, -1, OCI_B_CURSOR);
+
+    // Ejecutar el procedimiento
     oci_execute($stidUsuario);
-    while (($datos = oci_fetch_assoc($stidUsuario)) !=false) { 
-        $nombre = $datos['NOMBRE'];
-        $primer_apellido = $datos['PRIMER_APELLIDO'];
-        $segundo_apellido = $datos['SEGUNDO_APELLIDO'];
-        $fecha_nacimiento = $datos['FECHA_NACIMIENTO'];
-        $altura_persona = $datos['ALTURA_PERSONA'];
-        $peso_persona = $datos['PESO_PERSONA'];
-        $lesiones = $datos['LESIONES'];
-        $medicamentos = $datos['MEDICAMENTOS'];
-        $embarazo = $datos['EMBARAZO'];
-        $cirugia = $datos['CIRUGIA'];
-        $objetivos = $datos['OBJETIVOS'];
+    // Ejecutar el cursor
+    oci_execute($p_cursor_usuario);
+
+    $datosUsuario = [];//el array se usa en el for each para tomar las columnas del objeto encontrado.
+    // Recorrer los resultados con while
+    while (($row = oci_fetch_assoc($p_cursor_usuario)) !== false) {
+        $datosUsuario[] = $row;
+    }
+        //extraer el dato de cada columna e indroducirla en una variable
+    foreach ($datosUsuario as $usuario) {
+        $nombre = $usuario['NOMBRE'];
+        $primer_apellido = $usuario['PRIMER_APELLIDO'];
+        $segundo_apellido = $usuario['SEGUNDO_APELLIDO'];
+        $fecha_nacimiento = $usuario['FECHA_NACIMIENTO'];
+        $altura_persona = $usuario['ALTURA_PERSONA'];
+        $peso_persona = $usuario['PESO_PERSONA'];
+        $lesiones = $usuario['LESIONES'];
+        $medicamentos = $usuario['MEDICAMENTOS'];
+        $embarazo = $usuario['EMBARAZO'];
+        $cirugia = $usuario['CIRUGIA'];
+        $objetivos = $usuario['OBJETIVOS'];
+        
         ?>
 
     <div class="container mt-3 animation">
@@ -70,27 +87,26 @@ oci_bind_by_name($stidUsuario, ':ID_USUARIO', $id);
                 <?php 
                 //-------------------------- PAGOS -----------------------------
 
-               // Consulta para llamar al procedimiento almacenado
+               // Query del procedimiento almacenado
                 $queryPagos = "BEGIN SP_GET_PAGOS(:P_ID_USUARIO, :P_CURSOR); END;";
 
                 // Preparar la llamada al procedimiento almacenado
                 $stidPagos = oci_parse($conn, $queryPagos);
 
                 // Crear un cursor para recibir los resultados
-                $p_cursor = oci_new_cursor($conn);
+                $p_cursor_pagos = oci_new_cursor($conn);
 
                 // Vincular los parámetros
                 oci_bind_by_name($stidPagos, ':P_ID_USUARIO', $id);
-                oci_bind_by_name($stidPagos, ':P_CURSOR', $p_cursor, -1, OCI_B_CURSOR);
+                oci_bind_by_name($stidPagos, ':P_CURSOR', $p_cursor_pagos, -1, OCI_B_CURSOR);
 
                 // Ejecutar el procedimiento
                 oci_execute($stidPagos);
-
                 // Ejecutar el cursor
-                oci_execute($p_cursor);
+                oci_execute($p_cursor_pagos);
 
                 $datosPagos = [];
-                while (($row = oci_fetch_assoc($p_cursor)) !== false) {
+                while (($row = oci_fetch_assoc($p_cursor_pagos)) !== false) {
                     $datosPagos[] = $row;
                 }
                     
@@ -112,12 +128,13 @@ oci_bind_by_name($stidUsuario, ':ID_USUARIO', $id);
                 <span>
                     <h4><span class="badge bg-primary"><?= $estado ?></span></h4>
                 </span>
-                <?php } ?>
+                <?php 
+                //cerrar cursor
+                oci_free_statement($p_cursor_pagos);
+                } ?>
             </div>
         </div>
     </div>
-
-    <?php //} ?>
     </div>
     </div>
     </div>
@@ -166,7 +183,10 @@ oci_bind_by_name($stidUsuario, ':ID_USUARIO', $id);
         </div>
     </div>
 
-    <?php } ?>
+    <?php } 
+    //cerrar cursor
+    oci_free_statement($p_cursor_usuario);
+    ?>
 
 
 
