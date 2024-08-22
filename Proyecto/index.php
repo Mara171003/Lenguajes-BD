@@ -80,7 +80,6 @@
                     while (($row = oci_fetch_assoc($p_cursor_usuario)) !== false) {
                         $datosUsuario [] = $row;
                     }
-
                     foreach ($datosUsuario as $datos) {
                         $id_usuario = $datos['ID_USUARIO'];
                         $nombre = $datos['NOMBRE'];

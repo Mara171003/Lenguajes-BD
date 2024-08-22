@@ -51,9 +51,9 @@ $(document).ready(function () {
                         <td>${rutina.name}</td>
                         <td>${rutina.day}</td>
                         <td>
-                            <a href="../ejercicio/ejercicio.php?id=${rutina.idRutina}"><button class="btn btn-success btn-lg"><i class="fa-solid fa-dumbbell ms-2 me-3"></i>Ejercicios</button></a>
-                            <button class="updateRutina btn btn-warning btn-lg px-4" value="${rutina.idRutina}">Editar Rutina</button>
-                            <button class="deleteRutina btn btn-danger btn-lg" value="${rutina.idRutina}">Eliminar</button>
+                            <a href="../ejercicio/ejercicio.php?id=${rutina.idRutina}"><button class="btn btn-success"><i class="fa-solid fa-dumbbell ms-2 me-3"></i>Ejercicios</button></a>
+                            <button class="updateRutina btn btn-warning px-4" value="${rutina.idRutina}">Editar Rutina</button>
+                            <button class="deleteRutina btn btn-danger" value="${rutina.idRutina}">Eliminar</button>
                         </td>
                     </tr>
                         `
@@ -73,7 +73,7 @@ $(document).ready(function () {
                 if (rol == 1) {//si tiene rol admin
                     $('#listadoRutinas').html(plantilla);    //en tbody identificado con id se le inserta el html credo con la platilla de arriba hecho con JS
                 }
-                if(rol ==2){
+                if (rol == 2) {
                     $('#listadoRutinas').html(plantillaUser);
                 }
             }
@@ -96,16 +96,19 @@ $(document).ready(function () {
     //EDITAR RUTINA (consulta)
     $(document).on('click', '.updateRutina', function () {
         let idRutina = $(this).val(); //obtiene id del objeto
-        console.log(idRutina);
+        console.log(idRutina);//ver si se toma el id correcto
 
         $.post('../rutinas/updateRutina.php', { idRutina }, function (respuesta) {
             //Al recibir respuesta, convierte nuevamente a JSON
             const rutina = JSON.parse(respuesta);
+
+            if (rutina.length > 0) {     
             //y esos datos se muestran en los textfield
-            $('#tipoRutina').val(rutina.name);
-            $('#diaRutina').val(rutina.day);
+            $('#tipoRutina').val(rutina[0].name);
+            $('#diaRutina').val(rutina[0].day);
             $('#idRutina').val(idRutina);//se agrega el value en el input hidden de idRutina
             editar = true;    //activar modo edicion
+            }
         });
         ListadoRutina();//recargar listado
     });

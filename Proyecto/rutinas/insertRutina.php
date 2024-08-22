@@ -2,12 +2,13 @@
 //AGREGAR RUTINA
 
 include '../DAL/conexion.php';
+$conn = conecta();
 
 if(isset($_POST['name'])){ //obtener el objeto enviado en JSON desde JS
     
-    $idUser=$_POST['idUser']; //de la mima manera con descripcion
+    $idUser=$_POST['idUser']; //de la misma manera con descripcion
     $name = $_POST['name'];  //almacenar el parametro nombre en variable 
-    $day=$_POST['day']; //de la mima manera con descripcion
+    $day=$_POST['day']; //de la misma manera con descripcion
     
     //verificar en consola
     ECHO 'PHP: ';
@@ -15,15 +16,23 @@ if(isset($_POST['name'])){ //obtener el objeto enviado en JSON desde JS
     ECHO ' Dia recibido desde php: '.$day.' '; 
     ECHO ' id usuario: '.$idUser;
 
-    $insertSQL = "INSERT INTO rutina(nombre_rutina, dia_rutina, id_usuario) VALUES ('$name', '$day', $idUser)";
+    //preparar consulta para eliminar
+    $insertSQL = "BEGIN SP_INSERT_RUTINA(:P_NOMBRE_RUTINA,:P_DIA_RUTINA,:P_ID_USUARIO); END;";
 
-    $resultado = Conecta()->query($insertSQL);//ejecutar insert en sql
+    //preparar conexion y consulta
+    $stid = oci_parse($conn, $insertSQL);
 
-    if(!$resultado){ //si no me da resultado
-        die('Insercion fallida');     //parar y mostrar mensaje
-    }
-    echo 'Rutina Agregada';
+    //ligar variables/paremetros
+    oci_bind_by_name($stid, ':P_NOMBRE_RUTINA', $name);
+    oci_bind_by_name($stid, ':P_DIA_RUTINA', $day);
+    oci_bind_by_name($stid, ':P_ID_USUARIO', $idUser);
 
-} 
+    //ejecutar
+    oci_execute($stid);
+
+    //liberar
+    oci_free_statement($stid);
+    oci_close($conn);
+}
 
 ?>

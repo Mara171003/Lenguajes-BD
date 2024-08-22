@@ -6,17 +6,8 @@ if(empty($_SESSION['usuario'])) { // Si no hay una sesión usuario
     header("location: usuario/vistaLogin.php"); // Devolver al login
     exit;
 }
-
 $idUsuario = $_GET["id"];
-include "../DAL/conexion.php";
 
-// Obtener la conexión a la base de datos
-$conn = Conecta();
-
-// Preparar y ejecutar la consulta
-$sqlR = oci_parse($conn, "SELECT id_rutina, nombre_rutina, dia_rutina FROM rutina WHERE id_usuario = :idUsuario");
-oci_bind_by_name($sqlR, ':idUsuario', $idUsuario);
-oci_execute($sqlR);
 ?>
 
 <!DOCTYPE html>
@@ -41,7 +32,7 @@ oci_execute($sqlR);
 </head>
 
 <body>
-<?php include "../templates/header.php";?>
+    <?php include "../templates/header.php";?>
     <script src="..\js\jquery-3.7.1.min.js"></script>
 
 
@@ -52,9 +43,9 @@ oci_execute($sqlR);
     <input type="hidden" value="<?php echo $_SESSION['rol'];?>" id="Rol" />
     <div class="container-sm container-fluid">
         <div class="mt-5 p-4 bg-dark text-white">
-            <h2 class="text-start text-success display-6">Rutinas</h2>
+            <h2 class="text-start text-success ">Rutinas</h2>
         </div>
-        <table class="table table-dark table-hover display-6">
+        <table class="table table-dark table-hover ">
             <thead class="table-dark">
                 <tr>
                     <th scope="col" class="text-success">Id</th>
@@ -84,15 +75,11 @@ oci_execute($sqlR);
                     placeholder='Tipo de Rutina' />
                 <input type='text' id='diaRutina' class='form-form-control-sm mt-4 py-2 rounded-3 border-0 mx-2'
                     placeholder='Dia' />
-                    <button id='agregarRutina' type='submit' class='btn btn-success btn-lg' value='ok'>Guardar</button>";
+                    <button id='agregarRutina' type='submit' class='btn btn-success' value='ok'>Guardar</button>";
                 }
-
                 ?>
-
             </form>
-
         </div>
-
 
     </div>
     <script>

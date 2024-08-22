@@ -571,87 +571,91 @@ END;
 --------------------------------------------------------------------------------
 --RUTINA
 --------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE sp_insertar_rutina (
+
+CREATE OR REPLACE PROCEDURE sp_insert_rutina (
     p_nombre_rutina IN VARCHAR2,
     p_dia_rutina IN VARCHAR2,
-    p_id_usuario IN NUMBER,
-    p_result OUT VARCHAR2
+    p_id_usuario IN NUMBER
 ) AS
 BEGIN
     INSERT INTO RUTINA (ID_RUTINA, NOMBRE_RUTINA, DIA_RUTINA, ID_USUARIO)
     VALUES (seq_rutina_id.NEXTVAL, p_nombre_rutina, p_dia_rutina, p_id_usuario);
     
-    p_result := 'Insertado correctamente';
-EXCEPTION
-    WHEN OTHERS THEN
-        p_result := SQLERRM;
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_update_rutina (
-    p_id_rutina IN NUMBER,
-    p_nombre_rutina IN VARCHAR2,
-    p_dia_rutina IN VARCHAR2,
-    p_id_usuario IN NUMBER,
-    p_result OUT VARCHAR2
-) AS
-BEGIN
-    UPDATE RUTINA
-    SET NOMBRE_RUTINA = p_nombre_rutina,
-        DIA_RUTINA = p_dia_rutina,
-        ID_USUARIO = p_id_usuario
-    WHERE ID_RUTINA = p_id_rutina;
-    
-    p_result := 'Actualizado correctamente';
-EXCEPTION
-    WHEN OTHERS THEN
-        p_result := SQLERRM;
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_delete_rutina (
-    p_id_rutina IN NUMBER,
-    p_result OUT VARCHAR2
-) AS
-BEGIN
-    DELETE FROM RUTINA
-    WHERE ID_RUTINA = p_id_rutina;
-    
-    p_result := 'Eliminado correctamente';
-EXCEPTION
-    WHEN OTHERS THEN
-        p_result := SQLERRM;
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_get_rutina (
-    p_id_rutina IN NUMBER
-) AS
-    CURSOR rutina_cursor IS
-        SELECT ID_RUTINA, NOMBRE_RUTINA, DIA_RUTINA, ID_USUARIO
-        FROM RUTINA
-        WHERE ID_RUTINA = p_id_rutina;
-
-    v_id_rutina NUMBER;
-    v_nombre_rutina VARCHAR2(50);
-    v_dia_rutina VARCHAR2(30);
-    v_id_usuario NUMBER;
-BEGIN
-    OPEN rutina_cursor;
-    LOOP
-        FETCH rutina_cursor INTO v_id_rutina, v_nombre_rutina, v_dia_rutina, v_id_usuario;
-        EXIT WHEN rutina_cursor%NOTFOUND;
-
-        DBMS_OUTPUT.PUT_LINE('ID_RUTINA: ' || v_id_rutina || ', NOMBRE_RUTINA: ' || v_nombre_rutina || ', DIA_RUTINA: ' || v_dia_rutina || ', ID_USUARIO: ' || v_id_usuario);
-    END LOOP;
-
-    CLOSE rutina_cursor;
+IF SQL%ROWCOUNT > 0 THEN
+        COMMIT;
+    END IF;
 EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
 END;
 /
 
+CREATE OR REPLACE PROCEDURE sp_update_rutina (
+    p_id_rutina IN NUMBER,
+    p_nombre_rutina IN VARCHAR2,
+    p_dia_rutina IN VARCHAR2
+) AS
+BEGIN
+    UPDATE RUTINA
+    SET NOMBRE_RUTINA = p_nombre_rutina,
+        DIA_RUTINA = p_dia_rutina
+    WHERE ID_RUTINA = p_id_rutina;
+    
+    IF SQL%ROWCOUNT > 0 THEN
+        COMMIT;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+CREATE OR REPLACE PROCEDURE sp_delete_rutina (
+    p_id_rutina IN NUMBER
+) AS
+BEGIN
+    DELETE FROM RUTINA
+    WHERE ID_RUTINA = p_id_rutina;
+    
+IF SQL%ROWCOUNT > 0 THEN
+        COMMIT;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+--Sp consulta listado rutina (id usuario)
+CREATE OR REPLACE PROCEDURE sp_get_rutinas (
+    p_id_usuario IN NUMBER,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+    BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_RUTINA, NOMBRE_RUTINA, DIA_RUTINA, ID_USUARIO
+        FROM RUTINA
+        WHERE ID_USUARIO = p_id_usuario;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+--sp consulta rutina individualmente (id rutina)
+CREATE OR REPLACE PROCEDURE sp_get_rutina (
+    p_id_rutina IN NUMBER,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+    BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_RUTINA, NOMBRE_RUTINA, DIA_RUTINA
+        FROM RUTINA
+        WHERE ID_RUTINA = p_id_rutina;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
 --------------------------------------------------------------------------------
 --PAGOS
 CREATE OR REPLACE PROCEDURE sp_get_pagos (
