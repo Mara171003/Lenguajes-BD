@@ -7,7 +7,7 @@ if(empty($_SESSION['usuario'])){ //si no hay una sesion usuario
 } 
 $idRutina=$_GET["id"];
 include "../DAL/conexion.php";
-$sqlE = Conecta()->query("select * from ejercicio where id_rutina=$idRutina");
+
 ?>
 
 <!DOCTYPE html>
@@ -60,7 +60,7 @@ $sqlE = Conecta()->query("select * from ejercicio where id_rutina=$idRutina");
                     <?php
                 if($_SESSION['rol']=="1"){
                     echo "<div class='text-center mt-3'><br>
-                    <button class='btn btn-success btn-lg p-1 px-4' name='btnRegistrar' value='ok'>Guardar</button>
+                    <button class='btn btn-success p-1 px-4' name='btnRegistrar' value='ok'>Guardar</button>
                 </div>";
                     }?>
 
@@ -70,10 +70,10 @@ $sqlE = Conecta()->query("select * from ejercicio where id_rutina=$idRutina");
             <!-- Derecha --------------------------------------------------------------------------->
 
             <div class="col-sm-8">
-                <h4 class="text-success display-4"><small>Lista de Ejercicios</small></h4>
+                <h4 class="text-success display-5"><small>Lista de Ejercicios</small></h4>
                 <hr>
                 <div class="table-responsive container-sm mt-5">
-                    <table class="table table-bordered table-dark table-striped table-hover display-6">
+                    <table class="table table-bordered table-dark table-striped table-hover">
                         <thead>
                             <tr>
                                 <th>#</th>

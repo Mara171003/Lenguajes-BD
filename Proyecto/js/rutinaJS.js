@@ -102,16 +102,15 @@ $(document).ready(function () {
             //Al recibir respuesta, convierte nuevamente a JSON
             const rutina = JSON.parse(respuesta);
 
-            if (rutina.length > 0) {     
-            //y esos datos se muestran en los textfield
-            $('#tipoRutina').val(rutina[0].name);
-            $('#diaRutina').val(rutina[0].day);
-            $('#idRutina').val(idRutina);//se agrega el value en el input hidden de idRutina
-            editar = true;    //activar modo edicion
+            if (rutina.length > 0) {
+                //y esos datos se muestran en los textfield
+                $('#tipoRutina').val(rutina[0].name);
+                $('#diaRutina').val(rutina[0].day);
+                $('#idRutina').val(idRutina);//se agrega el value en el input hidden de idRutina
+                editar = true;    //activar modo edicion
             }
         });
         ListadoRutina();//recargar listado
     });
-
 
 });

@@ -23,3 +23,4 @@ if (isset($_POST['idRutina'])) {
     oci_free_statement($stid);
     oci_close($conn);
 }
+?>

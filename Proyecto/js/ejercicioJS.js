@@ -55,8 +55,8 @@ $(document).ready(function () {
                                 <td>${Ejercicio.maquina}</td>
                                 <td>${Ejercicio.observaciones}</td>
                                 <td>
-                                    <button value="${Ejercicio.idEjercicio}" class="updateEjercicio btn btn-warning btn-lg px-4">Editar</button><br>
-                                    <button value="${Ejercicio.idEjercicio}" class="deleteEjercicio btn btn-danger btn-lg px-4">Eliminar</button>
+                                    <button value="${Ejercicio.idEjercicio}" class="updateEjercicio btn btn-warning px-4">Editar</button><br>
+                                    <button value="${Ejercicio.idEjercicio}" class="deleteEjercicio btn btn-danger px-4 my-1">Eliminar</button>
                                 </td>
                             </tr>
                             `
@@ -76,7 +76,7 @@ $(document).ready(function () {
                 if (rol == 1) {//si tiene rol admin
                     $('#listadoEjercicios').html(plantilla);    //en tbody identificado con id se le inserta el html credo con la platilla de arriba hecho con JS
                 }
-                if(rol ==2){//para usuario
+                if (rol == 2) {//para usuario
                     $('#listadoEjercicios').html(plantillaUser);
                 }
             }
@@ -103,17 +103,18 @@ $(document).ready(function () {
 
         $.post('../ejercicio/updateEjercicio.php', { idEjercicio }, function (respuesta) {
             //Al recibir respuesta, convierte nuevamente a JSON
-            const Ejercicio = JSON.parse(respuesta);
-            //y esos datos se muestran en los textfield
-            $('#nombreEjercicio').val(Ejercicio.nombre), //obtener valor del campo con el id (name)
-                $('#setsEjercicio').val(Ejercicio.sets),
-                $('#maquinaEjercicio').val(Ejercicio.maquina),
-                $('#observacionesEjercicio').val(Ejercicio.observaciones),
-                $('#idEjercicio').val(Ejercicio.idEjercicio),//foreign key
-                editar = true;    //activar modo edicion
+            const ejercicio = JSON.parse(respuesta);
+            if (ejercicio.length > 0) {
+                //y esos datos se muestran en los textfield
+                $('#nombreEjercicio').val(ejercicio[0].nombre); //obtener valor del campo con el id (name)
+                    $('#setsEjercicio').val(ejercicio[0].sets);
+                    $('#maquinaEjercicio').val(ejercicio[0].maquina);
+                    $('#observacionesEjercicio').val(ejercicio[0].observaciones);
+                    $('#idEjercicio').val(idEjercicio);//foreign key
+                    editar = true;    //activar modo edicion
+            }
         });
         ListadoEjercicio();//recargar listado
     });
-
 
 });

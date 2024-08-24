@@ -23,3 +23,4 @@ oci_execute($stid);
 //liberar
 oci_free_statement($stid);
 oci_close($conn);
+?>

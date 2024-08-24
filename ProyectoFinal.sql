@@ -40,13 +40,13 @@ CREATE TABLE EJERCICIO (
     NOMBRE_EJERCICIO VARCHAR2(100) NOT NULL,
     SETSE VARCHAR2(30) NOT NULL,
     MAQUINA VARCHAR2(50) NOT NULL,
-    OBSERVACIONES CLOB,
+    OBSERVACIONES VARCHAR2(200) NOT NULL,
     ID_RUTINA INT
 );
 
 CREATE TABLE NOTAMES (
     ID_CHECK INT NOT NULL,
-    NOTA_MENSUAL CLOB,
+    NOTA_MENSUAL VARCHAR2(1000) NOT NULL,
     ID_FOTO INT
 );
 
@@ -286,7 +286,7 @@ CREATE OR REPLACE PROCEDURE sp_insert_detalles_usuario (
     p_medicamentos IN VARCHAR2,
     p_embarazo IN VARCHAR2,
     p_cirugia IN VARCHAR2,
-    p_objetivos IN CLOB,
+    p_objetivos IN VARCHAR2(50) NOT NULL,
     p_id_usuario IN NUMBER,
     p_result OUT VARCHAR2
 ) AS
@@ -310,7 +310,7 @@ CREATE OR REPLACE PROCEDURE sp_update_detalles_usuario (
     p_medicamentos IN VARCHAR2,
     p_embarazo IN VARCHAR2,
     p_cirugia IN VARCHAR2,
-    p_objetivos IN CLOB,
+    p_objetivos IN VARCHAR2(50) NOT NULL,
     p_id_usuario IN NUMBER,
     p_result OUT VARCHAR2
 ) AS
@@ -364,7 +364,7 @@ CREATE OR REPLACE PROCEDURE sp_get_detalles_usuario (
     v_medicamentos VARCHAR2(255);
     v_embarazo VARCHAR2(50);
     v_cirugia VARCHAR2(255);
-    v_objetivos CLOB;
+    v_objetivos VARCHAR2(50) NOT NULL;
     v_id_usuario NUMBER;
 BEGIN
     OPEN detalles_cursor;
@@ -387,7 +387,7 @@ END;
 --------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE sp_insert_notames (
     p_id_check IN NUMBER,
-    p_nota_mensual IN CLOB,
+    p_nota_mensual IN VARCHAR2(50) NOT NULL,
     p_id_foto IN NUMBER,
     p_result OUT VARCHAR2
 ) AS
@@ -405,7 +405,7 @@ END;
 /
 CREATE OR REPLACE PROCEDURE sp_update_notames (
     p_id_check IN NUMBER,
-    p_nota_mensual IN CLOB,
+    p_nota_mensual IN VARCHAR2(50) NOT NULL,
     p_id_foto IN NUMBER,
     p_result OUT VARCHAR2
 ) AS
@@ -450,7 +450,7 @@ CREATE OR REPLACE PROCEDURE sp_get_notames (
         WHERE ID_CHECK = p_id_check;
 
     v_id_check NUMBER;
-    v_nota_mensual CLOB;
+    v_nota_mensual VARCHAR2(50) NOT NULL;
     v_id_foto NUMBER;
 BEGIN
     -- Abre el cursor
@@ -580,7 +580,7 @@ CREATE OR REPLACE PROCEDURE sp_insert_rutina (
 BEGIN
     INSERT INTO RUTINA (ID_RUTINA, NOMBRE_RUTINA, DIA_RUTINA, ID_USUARIO)
     VALUES (seq_rutina_id.NEXTVAL, p_nombre_rutina, p_dia_rutina, p_id_usuario);
-    
+
 IF SQL%ROWCOUNT > 0 THEN
         COMMIT;
     END IF;
@@ -651,6 +651,132 @@ CREATE OR REPLACE PROCEDURE sp_get_rutina (
         SELECT ID_RUTINA, NOMBRE_RUTINA, DIA_RUTINA
         FROM RUTINA
         WHERE ID_RUTINA = p_id_rutina;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+--------------------------------------------------------------------------------
+--Ejercicio
+--------------------------------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE sp_insert_ejercicio (
+    p_nombre_ejercicio IN VARCHAR2,
+    p_setse IN VARCHAR2,
+    p_maquina IN VARCHAR2,
+    p_observaciones IN VARCHAR2,
+    p_id_rutina IN NUMBER
+) AS
+BEGIN
+    INSERT INTO EJERCICIO (ID_EJERCICIO, NOMBRE_EJERCICIO, SETSE, MAQUINA, OBSERVACIONES, ID_RUTINA)
+    VALUES (seq_ejercicio_id.NEXTVAL, p_nombre_ejercicio, p_setse, p_maquina, p_observaciones, p_id_rutina);
+
+    IF SQL%ROWCOUNT > 0 THEN
+        COMMIT;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+CREATE OR REPLACE PROCEDURE sp_update_ejercicio (
+    p_id_ejercicio IN NUMBER,
+    p_nombre_ejercicio IN VARCHAR2,
+    p_setse IN VARCHAR2,
+    p_maquina IN VARCHAR2,
+    p_observaciones IN VARCHAR2
+) AS
+BEGIN
+    UPDATE EJERCICIO
+    SET NOMBRE_EJERCICIO = p_nombre_ejercicio,
+        SETSE = p_setse,
+        MAQUINA = p_maquina,
+        OBSERVACIONES = p_observaciones
+    WHERE ID_EJERCICIO = p_id_ejercicio;
+    
+    IF SQL%ROWCOUNT > 0 THEN
+        COMMIT;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+CREATE OR REPLACE PROCEDURE sp_delete_ejercicio (
+    p_id_ejercicio IN NUMBER
+) AS
+BEGIN
+    DELETE FROM EJERCICIO
+    WHERE ID_EJERCICIO = p_id_ejercicio;
+    
+    IF SQL%ROWCOUNT > 0 THEN
+        COMMIT;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+CREATE OR REPLACE PROCEDURE sp_get_ejercicios (
+    p_id_rutina IN NUMBER,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_EJERCICIO, NOMBRE_EJERCICIO, SETSE, MAQUINA, OBSERVACIONES, ID_RUTINA
+        FROM EJERCICIO
+        WHERE ID_RUTINA = p_id_rutina;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+CREATE OR REPLACE PROCEDURE sp_get_ejercicio (
+    p_id_ejercicio IN NUMBER,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_EJERCICIO, NOMBRE_EJERCICIO, SETSE, MAQUINA, OBSERVACIONES
+        FROM EJERCICIO
+        WHERE ID_EJERCICIO = p_id_ejercicio;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+--Sp consulta listado ejercicios (id rutina)
+CREATE OR REPLACE PROCEDURE sp_get_ejercicios (
+    p_id_rutina IN NUMBER,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_EJERCICIO, NOMBRE_EJERCICIO, SETSE, MAQUINA, OBSERVACIONES, ID_RUTINA
+        FROM EJERCICIO
+        WHERE ID_RUTINA = p_id_rutina;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+commit;
+--sp consulta ejercicio individualmente (id ejercicio)
+CREATE OR REPLACE PROCEDURE sp_get_ejercicio (
+    p_id_ejercicio IN NUMBER,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+    BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_RUTINA, NOMBRE_RUTINA, DIA_RUTINA
+        FROM RUTINA
+        WHERE ID_RUTINA = p_id_ejercicio;
 EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
@@ -753,9 +879,9 @@ END;
 /
 
 CREATE OR REPLACE FUNCTION obtener_nota_foto(p_id_foto INT) 
-RETURN CLOB 
+RETURN VARCHAR2(50) NOT NULL 
 IS
-    v_nota CLOB;
+    v_nota VARCHAR2(50) NOT NULL;
 BEGIN
     SELECT nm.nota_mensual
     INTO v_nota
@@ -909,7 +1035,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_detalles_usuario AS
         p_medicamentos IN VARCHAR2,
         p_embarazo IN VARCHAR2,
         p_cirugia IN VARCHAR2,
-        p_objetivos IN CLOB,
+        p_objetivos IN VARCHAR2(50) NOT NULL,
         p_id_usuario IN NUMBER,
         p_result OUT VARCHAR2
     ) AS
@@ -932,7 +1058,7 @@ CREATE OR REPLACE PACKAGE BODY pkg_detalles_usuario AS
         p_medicamentos IN VARCHAR2,
         p_embarazo IN VARCHAR2,
         p_cirugia IN VARCHAR2,
-        p_objetivos IN CLOB,
+        p_objetivos IN VARCHAR2(50) NOT NULL,
         p_id_usuario IN NUMBER,
         p_result OUT VARCHAR2
     ) AS

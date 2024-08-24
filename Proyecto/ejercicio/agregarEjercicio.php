@@ -1,25 +1,31 @@
 <?php
-    include '../DAL/conexion.php';
-    // EDITAR RUTINA (remplaza datos)
-    //echo $_POST['idUser'];
-    $nombre = $_POST['nombre']; 
-    $sets=$_POST['sets']; 
-    $maquina=$_POST['maquina'];
-    $observaciones=$_POST['observaciones'];
-    $idEjercicio=$_POST['idEjercicio']; //Foreign key
+include '../DAL/conexion.php';
+$conn = conecta();
 
+// EDITAR EJERCICIO (reemplaza datos/actualiza datos)
+$nombre = $_POST['nombre'];
+$sets = $_POST['sets'];
+$maquina = $_POST['maquina'];
+$observaciones = $_POST['observaciones'];
+$id = $_POST['idEjercicio'];
 
-    $update = "UPDATE ejercicio SET
-    nombre_Ejercicio = '$nombre',
-    setsE = '$sets',
-    maquina= '$maquina',
-    observaciones = '$observaciones'
-    WHERE id_ejercicio = '$idEjercicio'";
-    $resultado = Conecta()->query($update);//ejecutar delete en sql
-    
-        if (!$resultado) {
-        die('Consulta fallida');
-        }
-        echo "Rutina actualizada";  
+// Preparar consulta para actualizar
+$updateSQL = "BEGIN SP_UPDATE_EJERCICIO(:P_ID_EJERCICIO, :P_NOMBRE_EJERCICIO, :P_SETS, :P_MAQUINA, :P_OBSERVACIONES); END;";
 
+// Preparar conexión y consulta
+$stid = oci_parse($conn, $updateSQL);
+
+// Ligar variables/parámetros
+oci_bind_by_name($stid, ':P_ID_EJERCICIO', $id);
+oci_bind_by_name($stid, ':P_NOMBRE_EJERCICIO', $nombre);
+oci_bind_by_name($stid, ':P_SETS', $sets);
+oci_bind_by_name($stid, ':P_MAQUINA', $maquina);
+oci_bind_by_name($stid, ':P_OBSERVACIONES', $observaciones);
+
+// Ejecutar
+oci_execute($stid);
+
+// Liberar
+oci_free_statement($stid);
+oci_close($conn);
 ?>

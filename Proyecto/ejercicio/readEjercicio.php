@@ -2,37 +2,45 @@
 
 include '../DAL/conexion.php';
 
-    if(isset($_POST['id'])){
+if (isset($_POST['id'])) {
 
-        $id=$_POST['id'];
+    $conn = conecta();
+    $id = $_POST['id'];
 
-        $readSQL = "SELECT * FROM ejercicio where id_rutina = $id";
+    //definir cursor
+    $P_CURSOR_EJERCICIO = oci_new_cursor($conn);
 
+    $readSQL = "BEGIN SP_GET_EJERCICIOS(:P_ID_RUTINA, :P_CURSOR_EJERCICIO); END;";
 
+    $stid = oci_parse($conn, $readSQL);
 
-        
-        $resultado = Conecta()->query($readSQL);    //ejecutar insert en sql
+    oci_bind_by_name($stid, ':P_ID_RUTINA', $id);
 
-        
-        if(!$resultado){    //si no hay resultado, consulta fallida
-            die('Consulta fallida' . mysqli_error($conexion));
-        }
+    oci_bind_by_name($stid, ':P_CURSOR_EJERCICIO', $P_CURSOR_EJERCICIO, -1, OCI_B_CURSOR);
 
-        //en este caso se guardan los objetos en un array JSON para despues
-        //ser consultado con GET de AJAX en FRONTEND
-        $json = array();
-        while($row=mysqli_fetch_array($resultado)){ //fila por cada dato de DB
-            $json[] = array(
-                'idEjercicio' => $row['id_ejercicio'],
-                'nombre' => $row['nombre_ejercicio'],
-                'sets' => $row['setsE'],
-                'maquina' => $row['maquina'],
-                'observaciones' => $row['observaciones'],
-                'idRutina' => $row['id_rutina']
-            );
-            }
-            $jsonString = json_encode($json); //decodifica Json (de json a string nuevamente)
-            echo $jsonString;
+    //en este caso se guardan los objetos en un array JSON para despues
+    //ser consultado con GET de AJAX en FRONTEND
 
+    oci_execute($stid);
+    oci_execute($P_CURSOR_EJERCICIO);
+
+    $json = array();
+    while (($row = oci_fetch_assoc($P_CURSOR_EJERCICIO)) !== false) {
+        $json[] = array(
+            'idEjercicio' => $row['ID_EJERCICIO'],
+            'nombre' => $row['NOMBRE_EJERCICIO'],
+            'sets' => $row['SETSE'],
+            'maquina' => $row['MAQUINA'],
+            'observaciones' => $row['OBSERVACIONES']
+
+        );
     }
+
+    $jsonString = json_encode($json);
+    echo $jsonString;
+
+    oci_free_statement($stid);
+    oci_free_statement($P_CURSOR_EJERCICIO);
+    oci_close($conn);
+}
 ?>
