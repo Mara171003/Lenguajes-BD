@@ -4,18 +4,64 @@ require_once "../include/functions/recoge.php";
 $conn = Conecta();
 session_start();
 
+function insertUsuario($conn, $nombre, $primerApellido, $segundoApellido, $correo, $password) {
+
+    $insertSQL = "BEGIN sp_insert_usuario(:p_nombre, :p_primer_apellido, :p_segundo_apellido, :p_correo, :p_password); END;";
+    $stid = oci_parse($conn, $insertSQL);
+    
+    // Ligar las variables/paremetros
+    oci_bind_by_name($stid, ':p_nombre', $nombre);
+    oci_bind_by_name($stid, ':p_primer_apellido', $primerApellido);
+    oci_bind_by_name($stid, ':p_segundo_apellido', $segundoApellido);
+    oci_bind_by_name($stid, ':p_correo', $correo);
+    oci_bind_by_name($stid, ':p_password', $password);
+
+    //ejecutar
+    oci_execute($stid);
+
+    //liberar
+    oci_free_statement($stid);
+    oci_close($conn);
+
+    // extraer el usuario recien creado para guardar variables de sesion
+    $validacion = 'BEGIN sp_get_usuario_X_correo(:p_correo, :p_cursor); END;';
+
+    $stid_D = oci_parse($conn, $validacion);
+    $p_cursor = oci_new_cursor($conn);
+
+    oci_bind_by_name($stid_D, ':p_correo', $correo);
+    oci_bind_by_name($stid, ':p_cursor', $p_cursor, -1, OCI_B_CURSOR);
+
+    oci_execute($stid_D);
+    oci_execute($p_cursor);
+    
+    if ($datos = oci_fetch_object($stid_D)) {
+        $_SESSION['usuario'] = $datos->CORREO;
+        $_SESSION['id'] = $datos->ID_USUARIO;
+        $_SESSION['rol'] = $datos->ID_ROL;
+        $_SESSION['apellido1'] = $datos->PRIMER_APELLIDO;
+        $_SESSION['apellido2'] = $datos->SEGUNDO_APELLIDO;
+        $_SESSION['nombre'] = $datos->NOMBRE;
+        
+    } else {
+        echo 'Error al registrar';
+    }
+
+    //liberar
+    oci_free_statement($stid_D);
+    oci_free_statement($p_cursor);
+    oci_close($conn);
+}
+
 if (isset($_POST["correo"])) {
     $nombre = recogePost("nombre");
     $primerApellido = recogePost("apellido1");
     $segundoApellido = recogePost("apellido2");
     $correo = recogePost("correo");
-    $idRol=2;
-    $tipoSuscripcion="basico";
     $password = recogePost("password");
     $password = md5($password); // Encriptar contraseña
 
     
-
     // Verificar si el correo ya está registrado
     $verificarCorreo = "BEGIN SP_GET_CORREO(:P_CORREO, :P_EXISTE); END;";
     $stidV = oci_parse($conn, $verificarCorreo);
@@ -37,53 +83,15 @@ if (isset($_POST["correo"])) {
     }else{//Si no hay coincidencia, prosigue
         $v = true;
         echo $v;
+
+        //funcion insert usuario
+        insertUsuario($conn, $nombre, $primerApellido, $segundoApellido, $correo, $password);
+
+        //funcion insert detalles usuario
     }
 
-
-
-
-
-
-
-
-    die();
-    // Insertar nuevo usuario
     
-    $insertSQL = "BEGIN sp_insert_usuario(:p_nombre, :p_primer_apellido, :p_segundo_apellido, :p_correo, :p_tipo_suscripcion, :p_id_rol, :p_password); END;";
-    $stid = oci_parse($conn, $insertSQL);
-    
-    // Ligar las variables/paremetros
-    oci_bind_by_name($stid, ':p_nombre', $nombre);
-    oci_bind_by_name($stid, ':p_primer_apellido', $primerApellido);
-    oci_bind_by_name($stid, ':p_segundo_apellido', $segundoApellido);
-    oci_bind_by_name($stid, ':p_correo', $correo);
-    oci_bind_by_name($stid, ':p_tipo_suscripcion', $tipoSuscripcion);
-    oci_bind_by_name($stid, ':p_id_rol', $idRol);
-    oci_bind_by_name($stid, ':p_password', $password);
 
-    if (oci_execute($stid)) {
-        echo 'Usuario registrado';
 
-        // Validación e inicio de sesión automático
-        $validacion = "SELECT * FROM usuario WHERE correo = :correo";
-        $stid = oci_parse($conn, $validacion);
-        oci_bind_by_name($stid, ':correo', $correo);
-        oci_execute($stid);
-
-        if ($datos = oci_fetch_object($stid)) {
-            $_SESSION['usuario'] = $datos->CORREO;
-            $_SESSION['id'] = $datos->ID_USUARIO;
-            $_SESSION['rol'] = $datos->ID_ROL;
-            $_SESSION['apellido1'] = $datos->PRIMER_APELLIDO;
-            $_SESSION['apellido2'] = $datos->SEGUNDO_APELLIDO;
-            $_SESSION['nombre'] = $datos->NOMBRE;
-            header("Location: ../index.php");
-        }
-    } else {
-        echo 'Error al registrar';
-    }
-
-    oci_free_statement($stid);
-    oci_close($conn);
 }
 ?>

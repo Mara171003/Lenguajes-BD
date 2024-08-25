@@ -1,7 +1,5 @@
 <?php 
 $id=$_GET["id"];
-include "../DAL/conexion.php";
-$conn=conecta();
 ?>
 
 <!DOCTYPE html>
@@ -28,8 +26,11 @@ $conn=conecta();
 <body>
     <!--  --->
     <?php
-    include "../templates/header.php";
-    include "../DAL/usuario.php"; 
+        include "../DAL/conexion.php";
+        $conn=conecta();
+        include "../templates/header.php";
+        include "../DAL/usuario.php"; 
+
 
      //query
      $queryDetalles = "BEGIN SP_GET_V_USUARIO_DETALLES(:P_ID_USUARIO, :P_CURSOR_USUARIO); END;";

@@ -102,15 +102,6 @@ CREATE SEQUENCE seq_foto_id START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_pagos_id START WITH 1 INCREMENT BY 1;
 
 -- Triggers para el auto-increment
-CREATE OR REPLACE TRIGGER trg_usuario_id
-BEFORE INSERT ON USUARIO
-FOR EACH ROW
-BEGIN
-    SELECT seq_usuario_id.NEXTVAL
-    INTO :new.ID_USUARIO
-    FROM dual;
-END;
-/
 
 CREATE OR REPLACE TRIGGER trg_detalle_id
 BEFORE INSERT ON DETALLES_USUARIO
@@ -229,20 +220,6 @@ EXCEPTION
 END;
 /
 
-CREATE OR REPLACE PROCEDURE sp_delete_usuario (
-    p_id_usuario IN NUMBER,
-    p_result OUT VARCHAR2
-) AS
-BEGIN
-    DELETE FROM USUARIO WHERE ID_USUARIO = p_id_usuario;
-
-    p_result := 'Eliminado correctamente';
-EXCEPTION
-    WHEN OTHERS THEN
-        p_result := SQLERRM;
-END;
-/
-
 CREATE OR REPLACE PROCEDURE sp_get_usuario (
     p_id_usuario IN NUMBER,
     p_cursor OUT SYS_REFCURSOR
@@ -274,35 +251,66 @@ EXCEPTION
 END;
 /
 
---------------------------------------------------------------------------------
---DETALLES USUARIO
---------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE sp_insert_detalles_usuario (
-    p_id_detalle IN NUMBER,
-    p_fecha_nacimiento IN DATE,
-    p_altura_persona IN FLOAT,
-    p_peso_persona IN FLOAT,
-    p_lesiones IN VARCHAR2,
-    p_medicamentos IN VARCHAR2,
-    p_embarazo IN VARCHAR2,
-    p_cirugia IN VARCHAR2,
-    p_objetivos IN VARCHAR2(50) NOT NULL,
-    p_id_usuario IN NUMBER,
-    p_result OUT VARCHAR2
+CREATE OR REPLACE PROCEDURE sp_get_correo (
+    p_correo IN VARCHAR2,
+    p_existe OUT NUMBER
 ) AS
 BEGIN
-    INSERT INTO DETALLES_USUARIO (ID_DETALLE, FECHA_NACIMIENTO, ALTURA_PERSONA, PESO_PERSONA, LESIONES, MEDICAMENTOS, EMBARAZO, CIRUGIA, OBJETIVOS, ID_USUARIO)
-    VALUES (p_id_detalle, p_fecha_nacimiento, p_altura_persona, p_peso_persona, p_lesiones, p_medicamentos, p_embarazo, p_cirugia, p_objetivos, p_id_usuario);
-
-    p_result := 'Insertado correctamente';
+    SELECT COUNT(*) INTO p_existe
+    FROM usuario
+    WHERE correo = p_correo;
 EXCEPTION
     WHEN OTHERS THEN
-        p_result := SQLERRM;
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
 END;
 /
 
+CREATE OR REPLACE PROCEDURE sp_get_usuario_X_correo (
+    p_correo IN VARCHAR2,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+BEGIN
+    -- Abre un cursor para seleccionar los datos
+    OPEN p_cursor FOR
+    SELECT * 
+    FROM USUARIO
+    WHERE CORREO = p_correo;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+--------------------------------------------------------------------------------
+--DETALLES USUARIO
+--------------------------------------------------------------------------------
+CREATE OR REPLACE TRIGGER trg_insert_detalles_usuario
+AFTER INSERT ON USUARIO
+FOR EACH ROW
+BEGIN
+    -- llama al procedimiento almacenado con el ID_USUARIO del nuevo registro
+    sp_insertar_detalles_usuario(:NEW.ID_USUARIO);
+END;
+/
+
+CREATE OR REPLACE PROCEDURE sp_insertar_detalles_usuario (
+    p_id_usuario IN NUMBER
+) AS
+BEGIN
+    INSERT INTO DETALLES_USUARIO (
+        ID_DETALLE, FECHA_NACIMIENTO, ALTURA_PERSONA, PESO_PERSONA,
+        LESIONES, MEDICAMENTOS, EMBARAZO, CIRUGIA, OBJETIVOS, ID_USUARIO
+    ) VALUES (
+        seq_detalle_id.NEXTVAL, TO_DATE('2000-01-01', 'YYYY-MM-DD'), NULL, NULL, NULL, NULL, NULL, NULL, NULL, p_id_usuario
+    );
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+
+--
 CREATE OR REPLACE PROCEDURE sp_update_detalles_usuario (
-    p_id_detalle IN NUMBER,
     p_fecha_nacimiento IN DATE,
     p_altura_persona IN FLOAT,
     p_peso_persona IN FLOAT,
@@ -310,9 +318,9 @@ CREATE OR REPLACE PROCEDURE sp_update_detalles_usuario (
     p_medicamentos IN VARCHAR2,
     p_embarazo IN VARCHAR2,
     p_cirugia IN VARCHAR2,
-    p_objetivos IN VARCHAR2(50) NOT NULL,
-    p_id_usuario IN NUMBER,
-    p_result OUT VARCHAR2
+    p_objetivos IN VARCHAR2,
+    p_id_usuario IN NUMBER
+    
 ) AS
 BEGIN
     UPDATE DETALLES_USUARIO
@@ -323,59 +331,12 @@ BEGIN
         MEDICAMENTOS = p_medicamentos,
         EMBARAZO = p_embarazo,
         CIRUGIA = p_cirugia,
-        OBJETIVOS = p_objetivos,
-        ID_USUARIO = p_id_usuario
-    WHERE ID_DETALLE = p_id_detalle;
+        OBJETIVOS = p_objetivos
+    WHERE ID_USUARIO = p_id_usuario;
 
-    p_result := 'Actualizado correctamente';
-EXCEPTION
-    WHEN OTHERS THEN
-        p_result := SQLERRM;
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_delete_detalles_usuario (
-    p_id_detalle IN NUMBER,
-    p_result OUT VARCHAR2
-) AS
-BEGIN
-    DELETE FROM DETALLES_USUARIO WHERE ID_DETALLE = p_id_detalle;
-
-    p_result := 'Eliminado correctamente';
-EXCEPTION
-    WHEN OTHERS THEN
-        p_result := SQLERRM;
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_get_detalles_usuario (
-    p_id_detalle IN NUMBER
-) AS
-    CURSOR detalles_cursor IS
-        SELECT ID_DETALLE, FECHA_NACIMIENTO, ALTURA_PERSONA, PESO_PERSONA, LESIONES, MEDICAMENTOS, EMBARAZO, CIRUGIA, OBJETIVOS, ID_USUARIO
-        FROM DETALLES_USUARIO
-        WHERE ID_DETALLE = p_id_detalle;
-
-    v_id_detalle NUMBER;
-    v_fecha_nacimiento DATE;
-    v_altura_persona FLOAT;
-    v_peso_persona FLOAT;
-    v_lesiones VARCHAR2(255);
-    v_medicamentos VARCHAR2(255);
-    v_embarazo VARCHAR2(50);
-    v_cirugia VARCHAR2(255);
-    v_objetivos VARCHAR2(50) NOT NULL;
-    v_id_usuario NUMBER;
-BEGIN
-    OPEN detalles_cursor;
-    LOOP
-        FETCH detalles_cursor INTO v_id_detalle, v_fecha_nacimiento, v_altura_persona, v_peso_persona, v_lesiones, v_medicamentos, v_embarazo, v_cirugia, v_objetivos, v_id_usuario;
-        EXIT WHEN detalles_cursor%NOTFOUND;
-
-        DBMS_OUTPUT.PUT_LINE('ID_DETALLE: ' || v_id_detalle || ', FECHA_NACIMIENTO: ' || v_fecha_nacimiento || ', ALTURA_PERSONA: ' || v_altura_persona || ', PESO_PERSONA: ' || v_peso_persona || ', LESIONES: ' || v_lesiones || ', MEDICAMENTOS: ' || v_medicamentos || ', EMBARAZO: ' || v_embarazo || ', CIRUGIA: ' || v_cirugia || ', OBJETIVOS: ' || v_objetivos || ', ID_USUARIO: ' || v_id_usuario);
-    END LOOP;
-
-    CLOSE detalles_cursor;
+    IF SQL%ROWCOUNT > 0 THEN
+        COMMIT;
+    END IF;
 EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);

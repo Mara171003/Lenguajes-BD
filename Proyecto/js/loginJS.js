@@ -1,5 +1,9 @@
 $(document).ready(function () {
 
+    document.getElementById('btnRegistrar').addEventListener('click', function() {
+        window.location.href = '../usuario/vistaLogin.php';
+    });
+
     //REGISTRO
     //obterner datos y enviar a backend
     $('#formAddUsuario').submit(e => {//selecciona elemento con ID='Usuarioform' y capturar su evento submit
@@ -28,7 +32,7 @@ $(document).ready(function () {
                             print(res);
                             //si la respuesta de correo existente, redirecciona, si no se detiene.
                             if (res == true) {
-                                window.location.href = 'insertarDatosUsuario.php'; // redirige solo si el registro es exitoso
+                                window.location.href = '../index.php'; // redirige solo si el registro es exitoso
                             }
                             if (res == false){
                                 alert('Este correo ya existe');
