@@ -7,17 +7,19 @@ if (isset($_POST['idUser']) && isset($_POST['valor'])) {
     $valor = $_POST['valor'];
 
     $conn = Conecta();
-    $stmt = $conn->prepare("UPDATE usuario SET tipo_suscripcion = ? WHERE id_usuario = ?");
-    $stmt->bind_param("si", $valor, $idUser);
+    $sql = "UPDATE usuario SET tipo_suscripcion = :valor WHERE id_usuario = :idUser";
+    $stmt = oci_parse($conn, $sql);
+    oci_bind_by_name($stmt, ':valor', $valor);
+    oci_bind_by_name($stmt, ':idUser', $idUser);
     
-    if ($stmt->execute()) {
+    if (oci_execute($stmt)) {
         echo 'Suscripción cambiada';
     } else {
-        echo 'Error al cambiar la suscripción';
+        $e = oci_error($stmt);
+        echo 'Error al cambiar la suscripción: ' . $e['message'];
     }
 
-    $stmt->close();
-    $conn->close();
+    oci_free_statement($stmt);
 }
 
 // Inserción de pago
@@ -30,26 +32,32 @@ if (isset($_POST['idUser']) && isset($_POST['monto']) && isset($_POST['dia']) &&
     $conn = Conecta();
     
     // Verificar si ya existe un pago para el usuario
-    $stmt = $conn->prepare("SELECT * FROM pagos WHERE id_usuario = ?");
-    $stmt->bind_param("i", $idUser);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $sql = "SELECT * FROM pagos WHERE id_usuario = :idUser";
+    $stmt = oci_parse($conn, $sql);
+    oci_bind_by_name($stmt, ':idUser', $idUser);
+    oci_execute($stmt);
 
-    if ($result->num_rows > 0) {
+    if (oci_fetch($stmt)) {
         echo "1"; // Indica que ya existe un pago
     } else {
         // Insertar nuevo pago
-        $stmt = $conn->prepare("INSERT INTO pagos (monto, dia_pago, estado, id_usuario) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("diss", $monto, $dia, $estado, $idUser);
+        $sql = "INSERT INTO pagos (monto, dia_pago, estado, id_usuario) VALUES (:monto, :dia, :estado, :idUser)";
+        $stmt = oci_parse($conn, $sql);
+        oci_bind_by_name($stmt, ':monto', $monto);
+        oci_bind_by_name($stmt, ':dia', $dia);
+        oci_bind_by_name($stmt, ':estado', $estado);
+        oci_bind_by_name($stmt, ':idUser', $idUser);
 
-        if ($stmt->execute()) {
+        if (oci_execute($stmt)) {
             echo "2"; // Indica que el pago fue insertado
         } else {
-            echo 'Error al insertar el pago';
+            $e = oci_error($stmt);
+            echo 'Error al insertar el pago: ' . $e['message'];
         }
     }
 
-    $stmt->close();
-    $conn->close();
+    oci_free_statement($stmt);
 }
+
+oci_close($conn);
 ?>
