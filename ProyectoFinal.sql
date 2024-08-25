@@ -280,6 +280,23 @@ EXCEPTION
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
 END;
 /
+
+CREATE OR REPLACE PROCEDURE sp_usuario_login (
+    p_correo IN VARCHAR2,
+    p_password IN VARCHAR2,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT *
+        FROM USUARIO
+        WHERE CORREO = p_correo and PASSWORD = p_password;
+        
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
 --------------------------------------------------------------------------------
 --DETALLES USUARIO
 --------------------------------------------------------------------------------
