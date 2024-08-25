@@ -14,28 +14,110 @@ function edad($fecha_nacimiento) {
     return $edad;
 }
 
+//actualiza datos de la tabla detalles usuario.
+if (!empty($_POST["btnActualizarDatos"])){
+    //verifica si cada textfield tiene datos
 
+    if(!empty($_POST["altura"]) and !empty($_POST["peso"]) and
+    !empty($_POST["lesiones"]) and !empty($_POST["medicamentos"]) and
+    !empty($_POST["embarazo"]) and !empty($_POST["cirugia"]) and
+    !empty($_POST["objetivos"]) and !empty($_POST["edad"])){
 
-/*
-function obtenerDatosUsuario($userId) {
-    $conn = Conecta();
+        $altura=$_POST["altura"];
+        $peso=$_POST["peso"];
+        $lesiones=$_POST["lesiones"];
+        $medicamentos=$_POST["medicamentos"];
+        $embarazo=$_POST["embarazo"];
+        $cirugia=$_POST["cirugia"];
+        $objetivos=$_POST["objetivos"];
+        $edad=$_POST["edad"];
 
-    // Preparar y ejecutar la consulta
-    $query = "SELECT * FROM usuario WHERE id_usuario = :user_id";
-    $stid = oci_parse($conn, $query);
-    oci_bind_by_name($stid, ':user_id', $userId);
-    oci_execute($stid);
+        $updateSQL = "BEGIN SP_UPDATE_DETALLES_USUARIO(:P_ALTURA_PERSONA,:P_PESO_PERSONA,:P_LESIONES,:P_MEDICAMENTOS,:P_EMBARAZO,:P_CIRUGIA,:P_OBJETIVOS,P_FECHA_NACIMIENTO,:P_ID_USUARIO); END;";
+        
+        // Preparar la conexión y la consulta
+        $stid = oci_parse($conn, $updateSQL);
+        
+        // Ligar variables/paremetros
+        oci_bind_by_name($stid, ':P_ALTURA_PERSONA', $altura);
+        oci_bind_by_name($stid, ':P_PESO_PERSONA', $peso);
+        oci_bind_by_name($stid, ':P_LESIONES', $lesiones);
+        oci_bind_by_name($stid, ':P_MEDICAMENTOS', $medicamentos);
+        oci_bind_by_name($stid, ':P_EMBARAZO', $embarazo);
+        oci_bind_by_name($stid, ':P_CIRUGIA', $cirugia);
+        oci_bind_by_name($stid, ':P_OBJETIVOS', $objetivos);
+        oci_bind_by_name($stid, ':P_FECHA_NACIMIENTO', $edad);
+        oci_bind_by_name($stid, ':P_ID_USUARIO', $id);
+        
 
-    // Recoger los resultados
-    $result = [];
-    while ($row = oci_fetch_assoc($stid)) {
-        $result[] = $row;
+        // Ejecutar la consulta
+        oci_execute($stid);
+
+        // Liberar recursos
+        oci_free_statement($stid);
+        oci_close($conn);
+
+        echo "<script>window.location.href = '../usuario/perfilUsuario.php?id=$id';</script>"; //Restroceder
+
+    }else{
+        echo '<div class="alert alert-warning text-center"> Campos vacios </div>';
+    }
+}
+
+//Agrega datos de la tabla detalles usuario
+
+if (!empty($_POST["btnAgregarDatos"])){
+   //verifica si cada textfield tiene datos
+    if(!empty($_POST["altura"]) and !empty($_POST["peso"]) and
+    !empty($_POST["lesiones"]) and !empty($_POST["medicamentos"]) and
+    !empty($_POST["embarazo"]) and !empty($_POST["cirugia"]) and
+    !empty($_POST["objetivos"])){
+
+        $altura=$_POST["altura"];
+        $peso=$_POST["peso"];
+        $lesiones=$_POST["lesiones"];
+        $medicamentos=$_POST["medicamentos"];
+        $embarazo=$_POST["embarazo"];
+        $cirugia=$_POST["cirugia"];
+        $objetivos=$_POST["objetivos"];
+        $edad=$_POST["edad"];
+        $id_usuario=$_SESSION['id'];
+
+        //Insert Detalles
+        $sql = Conecta()->query("INSERT INTO detalles_usuario (fecha_nacimiento, altura_persona, peso_persona, lesiones, medicamentos, embarazo, cirugia, objetivos, id_usuario) 
+        VALUES ('$edad', '$altura', '$peso', '$lesiones', '$medicamentos', '$embarazo', '$cirugia', '$objetivos', $id_usuario);");
+
+        //--
+        $insertSQL = "BEGIN sp_insert_detalles_usuario(:P_FECHA_NACIMIENTO:P_ALTURA_PERSONA:P_PESO_PERSONA,:P_LESIONES,:P_MEDICAMENTOS,:P_EMBARAZO,:P_CIRUGIA,:P_OBJETIVOS,:P_ID_USUARIO,:P_RESULT); END;";
+        
+        // Preparar la conexión y la consulta
+        $stid = oci_parse($conn, $insertSQL);
+        
+        // Ligar variables/parámetros
+
+        oci_bind_by_name($stid, ':P_FECHA_NACIMIENTO', $fecha_nacimiento);
+        oci_bind_by_name($stid, ':P_ALTURA_PERSONA', $altura);
+        oci_bind_by_name($stid, ':P_PESO_PERSONA', $peso);
+        oci_bind_by_name($stid, ':P_LESIONES', $lesiones);
+        oci_bind_by_name($stid, ':P_MEDICAMENTOS', $medicamentos);
+        oci_bind_by_name($stid, ':P_EMBARAZO', $embarazo);
+        oci_bind_by_name($stid, ':P_CIRUGIA', $cirugia);
+        oci_bind_by_name($stid, ':P_OBJETIVOS', $objetivos);
+        oci_bind_by_name($stid, ':P_ID_USUARIO', $id_usuario);
+        
+        // ejecutar la consulta
+        oci_execute($stid);
+        
+        // liberar
+        oci_free_statement($stid);
+        oci_close($conn);
+
+        echo "<script>window.location.href = '../index.php';</script>";
+
+    }else{
+        echo '<div class="alert alert-warning text-center"> Campos vacios </div>';
     }
 
-    oci_free_statement($stid);
-    oci_close($conn);
-
-    return $result;
+    
 }
-*/
+
 ?>

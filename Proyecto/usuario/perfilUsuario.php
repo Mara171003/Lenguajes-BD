@@ -37,6 +37,7 @@ $conn = Conecta();
     <!-- Mostrar datos técnicos -->
     <?php
     include '../templates/header.php';
+    include "../DAL/usuario.php"; 
 
     //query
     $queryDetalles = "BEGIN SP_GET_V_USUARIO_DETALLES(:P_ID_USUARIO, :P_CURSOR_USUARIO); END;";
@@ -175,9 +176,7 @@ $conn = Conecta();
                 </div>
                 <div class="col-sm-5 mb-5">
                     <h2 class="display-6 text-success">Edad: </h2>
-                    <?= 
-                    include "../DAL/usuario.php"; 
-                    ?>
+
                     <h2 class="display-6 text-white"><?= edad($fecha_nacimiento); ?> años</h2>
                 </div>
             </div>
@@ -190,22 +189,20 @@ $conn = Conecta();
     oci_free_statement($p_cursor_usuario);
     ?>
 
-
-
     <!-- Botón editar datos -->
     <div class="container mt-3">
         <div class="mt-4 p-5">
             <div class="d-flex justify-content-between my-5">
                 <div class="mt-4 py-5">
-                    <a href="editarDatosUsuario.php?id=<?= htmlspecialchars($id) ?>"
+                    <a href="editarDatosUsuario.php?id=<?= $id ?>"
                         class="btn btn-outline-success btn-lg">Editar Información</a>
                 </div>
                 <div class="mt-4 py-5">
-                    <a href="../rutinas/rutinas.php?id=<?= htmlspecialchars($id) ?>"
+                    <a href="../rutinas/rutinas.php?id=<?= $id ?>"
                         class="btn btn-outline-success btn-lg">Rutinas</a>
                 </div>
                 <div class="mt-4 py-5">
-                    <a href="../checkin/check-in.php?id=<?= htmlspecialchars($id) ?>"
+                    <a href="../checkin/check-in.php?id=<?= $id ?>"
                         class="btn btn-outline-success btn-lg">Check-In</a>
                 </div>
             </div>

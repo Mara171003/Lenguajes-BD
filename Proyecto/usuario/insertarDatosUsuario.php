@@ -3,7 +3,7 @@ session_start();
 
 // Verificar si se accedió con login
 if (empty($_SESSION['usuario'])) {
-    header("location: usuario/vistaLogin.php");
+    header("location: vistaLogin.php");
     exit();
 }
 

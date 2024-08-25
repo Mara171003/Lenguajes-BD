@@ -23,10 +23,17 @@ $(document).ready(function () {
                     $('#correo').val().trim() !== '' &&
                     $('#password').val().trim() !== '' &&
                     $('#passwordConfirm').val().trim() !== '') {
-                    $.post('../usuario/registrarUsuario.php', postData, function (respuesta) { //direccion a enviar a backend de agregar, objeto, funcion
-                        console.log(respuesta);
-                        window.location.href = 'insertarDatosUsuario.php';//redireccionar a detalles usuario
-                    });
+                        $.post('../usuario/registrarUsuario.php', postData, function (respuesta) {
+                            const res = respuesta;
+                            print(res);
+                            //si la respuesta de correo existente, redirecciona, si no se detiene.
+                            if (res == true) {
+                                window.location.href = 'insertarDatosUsuario.php'; // redirige solo si el registro es exitoso
+                            }
+                            if (res == false){
+                                alert('Este correo ya existe');
+                            }
+                        });
                 } else {
                     alert('Campos vacios');
                 }

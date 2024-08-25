@@ -1,6 +1,7 @@
 <?php
 include "../DAL/conexion.php";
 require_once "../include/functions/recoge.php";
+$conn = Conecta();
 session_start();
 
 if (isset($_POST["correo"])) {
@@ -8,35 +9,57 @@ if (isset($_POST["correo"])) {
     $primerApellido = recogePost("apellido1");
     $segundoApellido = recogePost("apellido2");
     $correo = recogePost("correo");
+    $idRol=2;
+    $tipoSuscripcion="basico";
     $password = recogePost("password");
     $password = md5($password); // Encriptar contraseña
 
-    $conn = Conecta();
+    
 
     // Verificar si el correo ya está registrado
-    $verificarCorreo = "SELECT correo FROM usuario WHERE correo = :correo";
-    $stid = oci_parse($conn, $verificarCorreo);
-    oci_bind_by_name($stid, ':correo', $correo);
-    oci_execute($stid);
+    $verificarCorreo = "BEGIN SP_GET_CORREO(:P_CORREO, :P_EXISTE); END;";
+    $stidV = oci_parse($conn, $verificarCorreo);
 
-    if (oci_fetch($stid)) {
-        echo 'Este correo ya está registrado';
-        oci_free_statement($stid);
-        oci_close($conn);
-        die();
+    oci_bind_by_name($stidV, ':P_CORREO', $correo);
+    oci_bind_by_name($stidV, ':P_EXISTE', $existe, 32);
+
+    oci_execute($stidV);
+
+    //verifica si el correo existe
+    $v = false; //booleano existe correo o no
+    if ($existe > 0) {
+        $v = false;//si hay concidencia de correo
+        echo $v;
+        oci_free_statement($stidV);
+        session_destroy();
+        exit();//detener
+        
+    }else{//Si no hay coincidencia, prosigue
+        $v = true;
+        echo $v;
     }
 
-    oci_free_statement($stid);
 
+
+
+
+
+
+
+    die();
     // Insertar nuevo usuario
-    $sql = "INSERT INTO usuario (nombre, primer_apellido, segundo_apellido, correo, tipo_suscripcion, id_rol, password)
-            VALUES (:nombre, :primer_apellido, :segundo_apellido, :correo, 'basico', 2, :password)";
-    $stid = oci_parse($conn, $sql);
-    oci_bind_by_name($stid, ':nombre', $nombre);
-    oci_bind_by_name($stid, ':primer_apellido', $primerApellido);
-    oci_bind_by_name($stid, ':segundo_apellido', $segundoApellido);
-    oci_bind_by_name($stid, ':correo', $correo);
-    oci_bind_by_name($stid, ':password', $password);
+    
+    $insertSQL = "BEGIN sp_insert_usuario(:p_nombre, :p_primer_apellido, :p_segundo_apellido, :p_correo, :p_tipo_suscripcion, :p_id_rol, :p_password); END;";
+    $stid = oci_parse($conn, $insertSQL);
+    
+    // Ligar las variables/paremetros
+    oci_bind_by_name($stid, ':p_nombre', $nombre);
+    oci_bind_by_name($stid, ':p_primer_apellido', $primerApellido);
+    oci_bind_by_name($stid, ':p_segundo_apellido', $segundoApellido);
+    oci_bind_by_name($stid, ':p_correo', $correo);
+    oci_bind_by_name($stid, ':p_tipo_suscripcion', $tipoSuscripcion);
+    oci_bind_by_name($stid, ':p_id_rol', $idRol);
+    oci_bind_by_name($stid, ':p_password', $password);
 
     if (oci_execute($stid)) {
         echo 'Usuario registrado';

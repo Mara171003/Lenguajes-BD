@@ -9,12 +9,6 @@ if(isset($_POST['name'])){ //obtener el objeto enviado en JSON desde JS
     $idUser=$_POST['idUser']; //de la misma manera con descripcion
     $name = $_POST['name'];  //almacenar el parametro nombre en variable 
     $day=$_POST['day']; //de la misma manera con descripcion
-    
-    //verificar en consola
-    ECHO 'PHP: ';
-    ECHO 'Nombre recibido desde php: '.$name.' '; 
-    ECHO ' Dia recibido desde php: '.$day.' '; 
-    ECHO ' id usuario: '.$idUser;
 
     //preparar consulta para eliminar
     $insertSQL = "BEGIN SP_INSERT_RUTINA(:P_NOMBRE_RUTINA,:P_DIA_RUTINA,:P_ID_USUARIO); END;";
