@@ -31,26 +31,16 @@ if (!empty($_POST["btnIngresar"])) {
             $_SESSION['apellido1'] = $datos['PRIMER_APELLIDO'];
             $_SESSION['apellido2'] = $datos['SEGUNDO_APELLIDO'];
             $_SESSION['nombre'] = $datos['NOMBRE'];
+            $_SESSION['filtro']=false;
             echo "success";
-            header("Location: ../index.php"); 
-            
+
+            if ($_SESSION['rol'] == 1) { // Si rol es 1 (admin)
+                header("Location: ../indexAdmin.php"); // Redirigir al index de admin
+            }else{
+                header("Location: ../index.php");
+            }
 
         }
-
-
-
-        /*
-        while (($datos = oci_fetch_object($stid)) != false) { // Si se encuentra un resultado
-            $_SESSION['usuario'] = $datos->CORREO; // Extrae el correo
-            $_SESSION['id'] = $datos->ID_USUARIO; // Extrae el id del usuario autenticado
-            $_SESSION['rol'] = $datos->ID_ROL; // Extrae el rol
-            $_SESSION['apellido1'] = $datos->PRIMER_APELLIDO;
-            $_SESSION['apellido2'] = $datos->SEGUNDO_APELLIDO;
-            $_SESSION['nombre'] = $datos->NOMBRE;
-            echo "success";
-            header("Location: ../index.php");
-        }
-        */
     }
 }
 

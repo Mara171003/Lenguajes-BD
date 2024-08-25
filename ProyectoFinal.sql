@@ -85,13 +85,13 @@ ALTER TABLE PAGOS ADD CONSTRAINT pk_pagos PRIMARY KEY (ID_PAGO);
 --Constraints FK
 
 ALTER TABLE USUARIO ADD CONSTRAINT fk_usuario_roles FOREIGN KEY (ID_ROL) REFERENCES ROLES (ID_ROL);
-ALTER TABLE DETALLES_USUARIO ADD CONSTRAINT fk_detalles_usuario_usuario FOREIGN KEY (ID_USUARIO) REFERENCES USUARIO (ID_USUARIO);
-ALTER TABLE RUTINA ADD CONSTRAINT fk_rutina_usuario FOREIGN KEY (ID_USUARIO) REFERENCES USUARIO (ID_USUARIO);
-ALTER TABLE EJERCICIO ADD CONSTRAINT fk_ejercicio_rutina FOREIGN KEY (ID_RUTINA) REFERENCES RUTINA (ID_RUTINA);
-ALTER TABLE NOTAMES ADD CONSTRAINT fk_notaMes_fotos FOREIGN KEY (ID_FOTO) REFERENCES FOTOS (ID_FOTO);
-ALTER TABLE FOTOS ADD CONSTRAINT fk_fotos_usuario FOREIGN KEY (ID_USUARIO) REFERENCES USUARIO (ID_USUARIO);
-ALTER TABLE PAGOS ADD CONSTRAINT fk_pagos_usuario FOREIGN KEY (ID_USUARIO) REFERENCES USUARIO (ID_USUARIO);
-
+ALTER TABLE DETALLES_USUARIO ADD CONSTRAINT fk_detalles_usuario_usuario FOREIGN KEY (ID_USUARIO) REFERENCES USUARIO (ID_USUARIO) ON DELETE CASCADE;
+ALTER TABLE RUTINA ADD CONSTRAINT fk_rutina_usuario FOREIGN KEY (ID_USUARIO) REFERENCES USUARIO (ID_USUARIO) ON DELETE CASCADE;
+ALTER TABLE EJERCICIO ADD CONSTRAINT fk_ejercicio_rutina FOREIGN KEY (ID_RUTINA) REFERENCES RUTINA (ID_RUTINA) ON DELETE CASCADE;
+ALTER TABLE NOTAMES ADD CONSTRAINT fk_notaMes_fotos FOREIGN KEY (ID_FOTO) REFERENCES FOTOS (ID_FOTO) ON DELETE CASCADE;
+ALTER TABLE FOTOS ADD CONSTRAINT fk_fotos_usuario FOREIGN KEY (ID_USUARIO) REFERENCES USUARIO (ID_USUARIO) ON DELETE CASCADE;
+ALTER TABLE PAGOS ADD CONSTRAINT fk_pagos_usuario FOREIGN KEY (ID_USUARIO) REFERENCES USUARIO (ID_USUARIO) ON DELETE CASCADE;
+  
 --Auto increment
 CREATE SEQUENCE seq_usuario_id START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_detalle_id START WITH 1 INCREMENT BY 1;
@@ -100,68 +100,6 @@ CREATE SEQUENCE seq_ejercicio_id START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_notaMes_id START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_foto_id START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_pagos_id START WITH 1 INCREMENT BY 1;
-
--- Triggers para el auto-increment
-
-CREATE OR REPLACE TRIGGER trg_detalle_id
-BEFORE INSERT ON DETALLES_USUARIO
-FOR EACH ROW
-BEGIN
-    SELECT seq_detalle_id.NEXTVAL
-    INTO :new.ID_DETALLE
-    FROM dual;
-END;
-/
-
-CREATE OR REPLACE TRIGGER trg_rutina_id
-BEFORE INSERT ON RUTINA
-FOR EACH ROW
-BEGIN
-    SELECT seq_rutina_id.NEXTVAL
-    INTO :new.ID_RUTINA
-    FROM dual;
-END;
-/
-
-CREATE OR REPLACE TRIGGER trg_ejercicio_id
-BEFORE INSERT ON EJERCICIO
-FOR EACH ROW
-BEGIN
-    SELECT seq_ejercicio_id.NEXTVAL
-    INTO :new.ID_EJERCICIO
-    FROM dual;
-END;
-/
-
-CREATE OR REPLACE TRIGGER trg_notaMes_id
-BEFORE INSERT ON NOTAMES
-FOR EACH ROW
-BEGIN
-    SELECT seq_notaMes_id.NEXTVAL
-    INTO :new.ID_CHECK
-    FROM dual;
-END;
-/
-
-CREATE OR REPLACE TRIGGER trg_foto_id
-BEFORE INSERT ON FOTOS
-FOR EACH ROW
-BEGIN
-    SELECT seq_foto_id.NEXTVAL
-    INTO :new.ID_FOTO
-    FROM dual;
-END;
-/
-
-CREATE OR REPLACE TRIGGER trg_pagos_id
-BEFORE INSERT ON PAGOS
-FOR EACH ROW
-BEGIN
-    SELECT seq_pagos_id.NEXTVAL
-    INTO :new.ID_PAGO
-    FROM dual;
-END;
-/
 
 --------------------------------------------------------------------------------
 -- Procedimientos almacenados 
@@ -182,7 +120,7 @@ CREATE OR REPLACE PROCEDURE sp_insert_usuario (
 ) AS
 BEGIN
     INSERT INTO USUARIO (ID_USUARIO, NOMBRE, PRIMER_APELLIDO, SEGUNDO_APELLIDO, CORREO, TIPO_SUSCRIPCION, ID_ROL, PASSWORD)
-    VALUES (p_id_usuario, p_nombre, p_primer_apellido, p_segundo_apellido, p_correo, p_tipo_suscripcion, p_id_rol, p_password);
+    VALUES (seq_usuario_id.NEXTVAL, p_nombre, p_primer_apellido, p_segundo_apellido, p_correo, p_tipo_suscripcion, p_id_rol, p_password);
 
     p_result := 'Insertado correctamente';
 EXCEPTION
@@ -292,6 +230,42 @@ BEGIN
         FROM USUARIO
         WHERE CORREO = p_correo and PASSWORD = p_password;
         
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+
+CREATE OR REPLACE PROCEDURE sp_get_usuario_filter (
+    p_id_usuario IN NUMBER,
+    p_estado IN VARCHAR2 DEFAULT NULL,
+    p_nombre IN VARCHAR2 DEFAULT NULL,
+    p_apellido IN VARCHAR2 DEFAULT NULL,
+    p_cursor_usuario OUT SYS_REFCURSOR
+) AS
+     v_sql VARCHAR2(1000);
+BEGIN
+    --indicar que muestre todos los usuarios menos el de admin
+     v_sql := 'SELECT * FROM V_USUARIOS_PAGOS WHERE ID_USUARIO != ' || p_id_usuario;
+
+--filtros-----
+--verifica contenido de parametros y concatena los where= y los and where, para la consulta final.
+
+    IF p_nombre IS NOT NULL THEN
+        v_sql := v_sql || ' AND NOMBRE LIKE ''%' || p_nombre || '%''';
+    END IF;
+    
+    IF p_apellido IS NOT NULL THEN
+        v_sql := v_sql || ' AND (PRIMER_APELLIDO LIKE ''%' || p_apellido || '%'' OR SEGUNDO_APELLIDO LIKE ''%' || p_apellido || '%'')';
+    END IF;
+    
+    IF p_estado IS NOT NULL THEN
+        v_sql := v_sql || ' AND ESTADO = ''' || p_estado || '''';
+    END IF;
+    
+    OPEN p_cursor_usuario FOR v_sql;
+    
 EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
@@ -822,6 +796,26 @@ ON
     U.ID_USUARIO = D.ID_USUARIO;
 /
 
+CREATE OR REPLACE VIEW V_USUARIOS_PAGOS AS
+SELECT 
+    U.ID_USUARIO,
+    U.NOMBRE,
+    U.PRIMER_APELLIDO,
+    U.SEGUNDO_APELLIDO,
+    U.CORREO,
+    U.TIPO_SUSCRIPCION,
+    U.ID_ROL,
+    P.ID_PAGO,
+    P.MONTO,
+    P.DIA_PAGO,
+    P.ESTADO
+FROM 
+    USUARIO U
+LEFT JOIN 
+    PAGOS P
+ON 
+    U.ID_USUARIO = P.ID_USUARIO;
+/
 --------------------------------------------------------------------------------
 --FOTO
 --------------------------------------------------------------------------------
@@ -1115,3 +1109,36 @@ CREATE OR REPLACE PACKAGE BODY pkg_detalles_usuario AS
     END;
 END pkg_detalles_usuario;
 /
+
+
+
+
+
+
+
+
+
+
+-- Eliminar la restricción de clave foránea en la tabla DETALLES_USUARIO
+ALTER TABLE DETALLES_USUARIO 
+   DROP CONSTRAINT fk_detalles_usuario_usuario;
+
+-- Eliminar la restricción de clave foránea en la tabla RUTINA
+ALTER TABLE RUTINA 
+   DROP CONSTRAINT fk_rutina_usuario;
+
+-- Eliminar la restricción de clave foránea en la tabla EJERCICIO
+ALTER TABLE EJERCICIO 
+   DROP CONSTRAINT fk_ejercicio_rutina;
+
+-- Eliminar la restricción de clave foránea en la tabla NOTAMES
+ALTER TABLE NOTAMES 
+   DROP CONSTRAINT fk_notaMes_fotos;
+
+-- Eliminar la restricción de clave foránea en la tabla FOTOS
+ALTER TABLE FOTOS 
+   DROP CONSTRAINT fk_fotos_usuario;
+
+-- Eliminar la restricción de clave foránea en la tabla PAGOS
+ALTER TABLE PAGOS 
+   DROP CONSTRAINT fk_pagos_usuario;
