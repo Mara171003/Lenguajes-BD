@@ -34,17 +34,10 @@ $conn = Conecta();
 </head>
 
 <body>
-    <?php if($_SESSION['rol']=="1"){
-     echo '<div class="text-white justify-content-between" id="headerP">
-        <h3 class="col-6 mt-2 mx-3"><?php echo $_SESSION["usuario"];?></h3>
-    <a href="../indexAdmin.php" class="btn btn-primary my-2 mx-3 my-auto px-3">Atras</a>
-    </div>';
-    }else{
-    echo '<div class="text-white justify-content-between" id="headerP">
+    <div class="text-white justify-content-between" id="headerP">
         <h3 class="col-6 mt-2 mx-3"><?php echo $_SESSION["usuario"];?></h3>
         <a href="../index.php" class="btn btn-primary my-2 mx-3 my-auto px-3">Atras</a>
-    </div>';}
-    ?>
+    </div>
 
     <!-- Mostrar datos técnicos -->
     <?php

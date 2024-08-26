@@ -205,8 +205,9 @@ BEGIN
         ID_DETALLE, FECHA_NACIMIENTO, ALTURA_PERSONA, PESO_PERSONA,
         LESIONES, MEDICAMENTOS, EMBARAZO, CIRUGIA, OBJETIVOS, ID_USUARIO
     ) VALUES (
-        seq_detalle_id.NEXTVAL, TO_DATE('2000-01-01', 'YYYY-MM-DD'), NULL, NULL, NULL, NULL, NULL, NULL, NULL, p_id_usuario
+        seq_detalle_id.NEXTVAL, TO_DATE('2000-01-01', 'YYYY-MM-DD'), '0', '0', 'vacio', 'vacio', 'vacio', 'vacio', 'vacio', p_id_usuario
     );
+    commit;
 EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
@@ -216,8 +217,8 @@ END;
 --
 CREATE OR REPLACE PROCEDURE sp_update_detalles_usuario (
     p_fecha_nacimiento IN DATE,
-    p_altura_persona IN FLOAT,
-    p_peso_persona IN FLOAT,
+    p_altura_persona IN VARCHAR2,
+    p_peso_persona IN VARCHAR2,
     p_lesiones IN VARCHAR2,
     p_medicamentos IN VARCHAR2,
     p_embarazo IN VARCHAR2,
