@@ -8,7 +8,7 @@ foreach ($resultado as $row): ?>
         <h2 class="text-success"><?= ucfirst(htmlspecialchars($row['MES'])) ?> del <?= htmlspecialchars($row['ANNO']) ?></h2>
         <hr class="border-top border-success opacity-50">
         <h3>Nota:</h3>
-        <h4><?= htmlspecialchars($row['NOTA_MENSUAL'] ?? 'Sin nota') ?></h4>
+        <h4><?= htmlspecialchars($row['NOTA_MENSUAL'] ?? 'Sin nota')  ?></h4>
     </div>
     <div class="card-body" id="canvas-img">
         <input type="hidden" class="id_foto" value="<?= htmlspecialchars($row['ID_FOTO']) ?>">

@@ -457,7 +457,7 @@ END;
 --------------------------------------------------------------------------------
 --FOTOS
 --------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE sp_insert_fotos (
+/*CREATE OR REPLACE PROCEDURE sp_insert_fotos (
     p_id_foto IN NUMBER,
     p_mes IN VARCHAR2,
     p_anno IN VARCHAR2,
@@ -548,6 +548,322 @@ EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
 END;
+/
+*/
+
+-----------------------------------------------------------------------------------------------
+--CHECK PHP -----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE mesValidacionNotaMes(
+    p_idUsuario IN INT,
+    p_existe OUT INT
+) AS
+    v_sql VARCHAR2(1000);
+    v_count INT;
+BEGIN
+    -- Construcción del SQL dinámico
+    v_sql := 'SELECT COUNT(*) FROM NOTAMES NM JOIN FOTOS F ON NM.ID_FOTO = F.ID_FOTO ' ||
+             'WHERE F.ID_USUARIO = :idUsuario ' ||
+             'AND F.MES = TO_CHAR(SYSDATE, ''Month'', ''NLS_DATE_LANGUAGE=SPANISH'') ' ||
+             'AND F.ANNO = TO_CHAR(SYSDATE, ''YYYY'')';
+
+    -- Ejecutar el SQL dinámico y obtener el resultado
+    EXECUTE IMMEDIATE v_sql INTO v_count USING p_idUsuario;
+
+    -- Validar el resultado
+    IF v_count > 0 THEN
+        p_existe := 1;
+    ELSE
+        p_existe := 0;
+    END IF;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Manejo de errores: devuelve p_existe como 0 e imprime el mensaje de error
+        p_existe := 0;
+        DBMS_OUTPUT.PUT_LINE('Error en mesValidacionNotaMes: ' || SQLERRM);
+        RAISE;
+END mesValidacionNotaMes;
+/
+
+-----------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE obtenerUltimoIdFoto(
+    p_idFoto OUT INT
+) AS
+    v_sql VARCHAR2(1000);
+BEGIN
+    -- Construcción del SQL dinámico
+    v_sql := 'SELECT NVL(MAX(ID_FOTO), 0) FROM FOTOS';
+
+    -- Ejecutar el SQL dinámico y obtener el resultado
+    EXECUTE IMMEDIATE v_sql INTO p_idFoto;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Manejo de errores
+        p_idFoto := 0;
+        DBMS_OUTPUT.PUT_LINE('Error en obtenerUltimoIdFoto: ' || SQLERRM);
+        RAISE;
+END obtenerUltimoIdFoto;
+/
+
+------------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE INSERTAR_FOTO (
+    p_mes IN VARCHAR2,
+    p_anno IN VARCHAR2,
+    p_rutaFoto IN VARCHAR2,
+    p_idUsuario IN NUMBER
+) AS
+    v_count NUMBER;
+    v_sql VARCHAR2(1000);
+BEGIN
+    -- SQL Dinámico para validar si el usuario existe
+    v_sql := 'SELECT COUNT(*) FROM CPROYECTO.USUARIO WHERE ID_USUARIO = :1';
+    EXECUTE IMMEDIATE v_sql INTO v_count USING p_idUsuario;
+    IF v_count = 0 THEN
+        -- El usuario no existe, lanzar una excepción
+        RAISE_APPLICATION_ERROR(-20001, 'El usuario con ID ' || p_idUsuario || ' no existe.');
+    END IF;
+    -- SQL Dinámico para insertar la foto si el usuario existe
+    v_sql := 'INSERT INTO CPROYECTO.FOTOS (mes, anno, ruta_foto, id_usuario) ' ||
+             'VALUES (:1, :2, :3, :4)';
+    EXECUTE IMMEDIATE v_sql USING p_mes, p_anno, p_rutaFoto, p_idUsuario;
+
+EXCEPTION
+    -- Manejo de excepciones
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Error al insertar la foto: ' || SQLERRM);
+END INSERTAR_FOTO;
+/
+
+------------------------------------------------------------------------------------------------
+/*SELECT id_usuario
+FROM usuario
+WHERE id_usuario = 3;*/
+
+CREATE OR REPLACE PROCEDURE crearNotaMes(
+    p_notaMensual IN VARCHAR2,
+    p_idFoto IN INT
+) AS
+    v_sql VARCHAR2(1000);
+BEGIN
+    -- SQL Dinámico para insertar la nota mensual
+    v_sql := 'INSERT INTO NOTAMES (NOTA_MENSUAL, ID_FOTO) VALUES (:1, :2)';
+    -- Ejecutar la consulta SQL dinámica
+    EXECUTE IMMEDIATE v_sql USING p_notaMensual, p_idFoto;
+EXCEPTION
+    -- Manejo de excepciones
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error al insertar la nota mensual: ' || SQLERRM);
+END crearNotaMes;
+/
+
+------------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE obtenerFotos(
+    p_idUsuario IN NUMBER,
+    p_anno IN VARCHAR2,
+    p_mes IN VARCHAR2,
+    p_resultado OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_resultado FOR
+    SELECT f.*, nm.*
+    FROM fotos f
+    LEFT JOIN notames nm ON f.id_foto = nm.id_foto
+    WHERE f.mes = p_mes AND f.anno = p_anno AND f.id_usuario = p_idUsuario;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('No se encontraron fotos para los parámetros proporcionados.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Ocurrió un error: ' || SQLERRM);
+END obtenerFotos;
+/
+------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE eliminar_foto (
+    p_id_foto IN INT
+) AS
+    v_sql_notames VARCHAR2(1000);
+    v_sql_fotos VARCHAR2(1000);
+BEGIN
+    v_sql_notames := 'DELETE FROM notames WHERE id_foto = :id_foto';
+    EXECUTE IMMEDIATE v_sql_notames USING p_id_foto;
+    v_sql_fotos := 'DELETE FROM fotos WHERE id_foto = :id_foto';
+    EXECUTE IMMEDIATE v_sql_fotos USING p_id_foto;
+    -- Confirma las transacciones
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Manejo de errores
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('Error al eliminar la foto: ' || SQLERRM);
+        RAISE;
+END eliminar_foto;
+/
+
+------------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE UpdateNotaMes (
+    p_idFoto IN NUMBER,
+    p_nota IN VARCHAR2
+) AS
+    v_sql VARCHAR2(1000);
+BEGIN
+    -- Construcción de la consulta SQL dinámica
+    v_sql := 'UPDATE notames SET NOTA_MENSUAL = :1 WHERE ID_FOTO = :2';
+    -- Ejecutar la consulta SQL dinámica
+    EXECUTE IMMEDIATE v_sql USING p_nota, p_idFoto;
+    COMMIT;
+EXCEPTION
+    -- Manejo de excepciones para capturar cualquier error
+    WHEN OTHERS THEN
+        ROLLBACK;  
+        RAISE_APPLICATION_ERROR(-20001, 'Error al actualizar la nota mensual: ' || SQLERRM);
+END UpdateNotaMes;
+/
+
+------------------------------------------------------------------------------------------------
+--PAQUETES DE CHECK-IN Y RELACIONADOS
+------------------------------------------------------------------------------------------------
+CREATE OR REPLACE PACKAGE Check_Pkg AS
+    PROCEDURE UpdateNotaMes(p_idFoto IN NUMBER, p_nota IN VARCHAR2);
+    PROCEDURE crearNotaMes(p_notaMensual IN VARCHAR2, p_idFoto IN INT);
+    PROCEDURE insertarFoto(p_mes IN VARCHAR2, p_anno IN VARCHAR2, p_rutaFoto IN VARCHAR2, p_idUsuario IN NUMBER);
+    PROCEDURE obtenerUltimoIdFoto(p_idFoto OUT INT);
+    PROCEDURE mesValidacionNotaMes(p_idUsuario IN INT, p_existe OUT INT);
+    PROCEDURE obtenerFotos(p_idUsuario IN NUMBER, p_anno IN VARCHAR2, p_mes IN VARCHAR2, p_resultado OUT SYS_REFCURSOR);
+    PROCEDURE eliminar_foto(p_id_foto IN INT);
+END Check_Pkg;
+/
+
+--PACKAFE BODYS
+CREATE OR REPLACE PACKAGE BODY Check_Pkg AS
+
+    PROCEDURE UpdateNotaMes (
+        p_idFoto IN NUMBER,
+        p_nota IN VARCHAR2
+    ) AS
+        v_sql VARCHAR2(1000);
+    BEGIN
+        v_sql := 'UPDATE notames SET NOTA_MENSUAL = :1 WHERE ID_FOTO = :2';
+        EXECUTE IMMEDIATE v_sql USING p_nota, p_idFoto;
+        COMMIT;
+    EXCEPTION
+        WHEN OTHERS THEN
+            ROLLBACK;
+            RAISE_APPLICATION_ERROR(-20001, 'Error al actualizar la nota mensual: ' || SQLERRM);
+    END UpdateNotaMes;
+
+    PROCEDURE crearNotaMes (
+        p_notaMensual IN VARCHAR2,
+        p_idFoto IN INT
+    ) AS
+        v_sql VARCHAR2(1000);
+    BEGIN
+        v_sql := 'INSERT INTO NOTAMES (NOTA_MENSUAL, ID_FOTO) VALUES (:1, :2)';
+        EXECUTE IMMEDIATE v_sql USING p_notaMensual, p_idFoto;
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE_APPLICATION_ERROR(-20001, 'Error al insertar la nota mensual: ' || SQLERRM);
+    END crearNotaMes;
+
+    PROCEDURE insertarFoto (
+        p_mes IN VARCHAR2,
+        p_anno IN VARCHAR2,
+        p_rutaFoto IN VARCHAR2,
+        p_idUsuario IN NUMBER
+    ) AS
+        v_count NUMBER;
+        v_sql VARCHAR2(1000);
+    BEGIN
+        v_sql := 'SELECT COUNT(*) FROM CPROYECTO.USUARIO WHERE ID_USUARIO = :1';
+        EXECUTE IMMEDIATE v_sql INTO v_count USING p_idUsuario;
+        IF v_count = 0 THEN
+            RAISE_APPLICATION_ERROR(-20001, 'El usuario con ID ' || p_idUsuario || ' no existe.');
+        END IF;
+        v_sql := 'INSERT INTO CPROYECTO.FOTOS (mes, anno, ruta_foto, id_usuario) VALUES (:1, :2, :3, :4)';
+        EXECUTE IMMEDIATE v_sql USING p_mes, p_anno, p_rutaFoto, p_idUsuario;
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE_APPLICATION_ERROR(-20002, 'Error al insertar la foto: ' || SQLERRM);
+    END insertarFoto;
+
+    PROCEDURE obtenerUltimoIdFoto (
+        p_idFoto OUT INT
+    ) AS
+        v_sql VARCHAR2(1000);
+    BEGIN
+        v_sql := 'SELECT NVL(MAX(ID_FOTO), 0) FROM FOTOS';
+        EXECUTE IMMEDIATE v_sql INTO p_idFoto;
+    EXCEPTION
+        WHEN OTHERS THEN
+            p_idFoto := 0;
+            DBMS_OUTPUT.PUT_LINE('Error en obtenerUltimoIdFoto: ' || SQLERRM);
+            RAISE;
+    END obtenerUltimoIdFoto;
+
+    PROCEDURE mesValidacionNotaMes (
+        p_idUsuario IN INT,
+        p_existe OUT INT
+    ) AS
+        v_sql VARCHAR2(1000);
+        v_count INT;
+    BEGIN
+        v_sql := 'SELECT COUNT(*) FROM NOTAMES NM JOIN FOTOS F ON NM.ID_FOTO = F.ID_FOTO ' ||
+                 'WHERE F.ID_USUARIO = :idUsuario ' ||
+                 'AND F.MES = TO_CHAR(SYSDATE, ''Month'', ''NLS_DATE_LANGUAGE=SPANISH'') ' ||
+                 'AND F.ANNO = TO_CHAR(SYSDATE, ''YYYY'')';
+        EXECUTE IMMEDIATE v_sql INTO v_count USING p_idUsuario;
+        IF v_count > 0 THEN
+            p_existe := 1;
+        ELSE
+            p_existe := 0;
+        END IF;
+    EXCEPTION
+        WHEN OTHERS THEN
+            p_existe := 0;
+            DBMS_OUTPUT.PUT_LINE('Error en mesValidacionNotaMes: ' || SQLERRM);
+            RAISE;
+    END mesValidacionNotaMes;
+
+    PROCEDURE obtenerFotos (
+        p_idUsuario IN NUMBER,
+        p_anno IN VARCHAR2,
+        p_mes IN VARCHAR2,
+        p_resultado OUT SYS_REFCURSOR
+    ) AS
+    BEGIN
+        OPEN p_resultado FOR
+        SELECT f.*, nm.*
+        FROM fotos f
+        LEFT JOIN notames nm ON f.id_foto = nm.id_foto
+        WHERE f.mes = p_mes AND f.anno = p_anno AND f.id_usuario = p_idUsuario;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            DBMS_OUTPUT.PUT_LINE('No se encontraron fotos para los parámetros proporcionados.');
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Ocurrió un error: ' || SQLERRM);
+            RAISE;
+    END obtenerFotos;
+
+    PROCEDURE eliminar_foto (
+        p_id_foto IN INT
+    ) AS
+        v_sql_notames VARCHAR2(1000);
+        v_sql_fotos VARCHAR2(1000);
+    BEGIN
+        v_sql_notames := 'DELETE FROM notames WHERE id_foto = :id_foto';
+        EXECUTE IMMEDIATE v_sql_notames USING p_id_foto;
+        v_sql_fotos := 'DELETE FROM fotos WHERE id_foto = :id_foto';
+        EXECUTE IMMEDIATE v_sql_fotos USING p_id_foto;
+        COMMIT;
+    EXCEPTION
+        WHEN OTHERS THEN
+            ROLLBACK;
+            DBMS_OUTPUT.PUT_LINE('Error al eliminar la foto: ' || SQLERRM);
+            RAISE;
+    END eliminar_foto;
+
+END Check_Pkg;
 /
 
 --------------------------------------------------------------------------------
@@ -1225,129 +1541,3 @@ INSERT INTO USUARIO(ID_USUARIO,NOMBRE,PRIMER_APELLIDO,SEGUNDO_APELLIDO,CORREO,TI
 VALUES(1,'admin','admin','admin','admin@gmail.com','basico',1,'admin');
 
 */
-
-
---CHECK PHP ----------------------------------------------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE mesValidacionNotaMes(
-    p_idUsuario IN INT,
-    p_existe OUT INT
-) AS
-BEGIN
-    SELECT COUNT(*)
-    INTO p_existe
-    FROM NOTAMES NM
-    JOIN FOTOS F ON NM.ID_FOTO = F.ID_FOTO
-    WHERE F.ID_USUARIO = p_idUsuario
-    AND F.MES = TO_CHAR(SYSDATE, 'Month', 'NLS_DATE_LANGUAGE=SPANISH')
-    AND F.ANNO = TO_CHAR(SYSDATE, 'YYYY');
-    
-    IF p_existe > 0 THEN
-        p_existe := 1;
-    ELSE
-        p_existe := 0;
-    END IF;
-END;
-/
-
-CREATE OR REPLACE PROCEDURE obtenerUltimoIdFoto(
-    p_idFoto OUT INT
-) AS
-BEGIN
-    SELECT NVL(MAX(ID_FOTO), 0)
-    INTO p_idFoto
-    FROM FOTOS;
-END;
-/
-
-CREATE OR REPLACE PROCEDURE INSERTAR_FOTO (
-    p_mes IN VARCHAR2,
-    p_anno IN VARCHAR2,
-    p_rutaFoto IN VARCHAR2,
-    p_idUsuario IN NUMBER
-) AS
-    v_count NUMBER;
-BEGIN
-    -- Validar si el usuario existe
-    SELECT COUNT(*)
-    INTO v_count
-    FROM CPROYECTO.USUARIO
-    WHERE ID_USUARIO = p_idUsuario;
-
-    IF v_count = 0 THEN
-        -- El usuario no existe, lanzar una excepciï¿½n
-        RAISE_APPLICATION_ERROR(-20001, 'El usuario con ID ' || p_idUsuario || ' no existe.');
-    END IF;
-
-    -- Insertar la foto si el usuario existe
-    INSERT INTO CPROYECTO.FOTOS (mes, anno, ruta_foto, id_usuario)
-    VALUES (p_mes, p_anno, p_rutaFoto, p_idUsuario);
-    
-EXCEPTION
-    -- Captura cualquier error que ocurra durante la inserciï¿½n
-    WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20002, 'Error al insertar la foto: ' || SQLERRM);
-END;
-/
-
-SELECT id_usuario
-FROM usuario
-WHERE id_usuario = 3;
-
-CREATE OR REPLACE PROCEDURE crearNotaMes(
-    p_notaMensual IN VARCHAR2,
-    p_idFoto IN INT
-) AS
-BEGIN
-    INSERT INTO NOTAMES (NOTA_MENSUAL, ID_FOTO)
-    VALUES (p_notaMensual, p_idFoto);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE obtenerFotos(
-    p_idUsuario IN NUMBER,
-    p_anno IN VARCHAR2,
-    p_mes IN VARCHAR2,
-    p_resultado OUT SYS_REFCURSOR
-) AS
-BEGIN
-    OPEN p_resultado FOR
-    SELECT f.*, nm.*
-    FROM fotos f
-    LEFT JOIN notames nm ON f.id_foto = nm.id_foto
-    WHERE f.mes = p_mes AND f.anno = p_anno AND f.id_usuario = p_idUsuario;
-END;
-/
-
-CREATE OR REPLACE PROCEDURE eliminar_foto (
-    p_id_foto IN INT
-) AS
-BEGIN
-    DELETE FROM notames WHERE id_foto = p_id_foto;
-    DELETE FROM fotos WHERE id_foto = p_id_foto;
-    COMMIT;
-EXCEPTION
-    WHEN OTHERS THEN
-        -- Manejo de errores
-        ROLLBACK;
-        RAISE;
-END;
-/
-
-CREATE OR REPLACE PROCEDURE UpdateNotaMes (
-    p_idFoto IN NUMBER,
-    p_nota IN VARCHAR2
-) AS
-BEGIN
-    UPDATE notames
-    SET NOTA_MENSUAL = p_nota
-    WHERE ID_FOTO = p_idFoto;
-    COMMIT;
-END;
-/
-
-
-SELECT * FROM NOTAMES;
-SELECT * FROM FOTOS;
-SELECT * FROM USUARIO;
-
----CHECK READ.PHP

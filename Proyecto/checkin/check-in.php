@@ -92,85 +92,83 @@ $id = $_GET['id'];
                     <div class="card text-center animation" id="header-card">
                         
 
-<?php
+                        <?php
 
-include "../DAL/conexion.php";
+                        include "../DAL/conexion.php";
 
-$conn = conecta();
+                        $conn = conecta();
 
-// Verificar si zse reciben los datos del formulario
-if (isset($_POST['idUsuario']) && isset($_POST['anno']) && isset($_POST['mes'])) {
-    $idUsuario = htmlspecialchars($_POST['idUsuario']);
-    $anno = htmlspecialchars($_POST['anno']);
-    $mes = htmlspecialchars($_POST['mes']);
+                        // Verificar si zse reciben los datos del formulario
+                        if (isset($_POST['idUsuario']) && isset($_POST['anno']) && isset($_POST['mes'])) {
+                            $idUsuario = htmlspecialchars($_POST['idUsuario']);
+                            $anno = htmlspecialchars($_POST['anno']);
+                            $mes = htmlspecialchars($_POST['mes']);
 
-    // Preparar llamada al procedimiento almacenado
-    $sql = "BEGIN obtenerFotos(:idUsuario, :anno, :mes, :resultado); END;";
+                            // Preparar llamada al procedimiento almacenado
+                            $sql = "BEGIN obtenerFotos(:idUsuario, :anno, :mes, :resultado); END;";
 
-    // Preparar la llamada al procedimiento
-    $stmt = oci_parse($conn, $sql);
+                            // Preparar la llamada al procedimiento
+                            $stmt = oci_parse($conn, $sql);
 
-    // Enlazar parámetros
-    oci_bind_by_name($stmt, ':idUsuario', $idUsuario, -1, SQLT_INT);
-    oci_bind_by_name($stmt, ':anno', $anno, -1, SQLT_CHR);
-    oci_bind_by_name($stmt, ':mes', $mes, -1, SQLT_CHR);
+                            // Enlazar parámetros
+                            oci_bind_by_name($stmt, ':idUsuario', $idUsuario, -1, SQLT_INT);
+                            oci_bind_by_name($stmt, ':anno', $anno, -1, SQLT_CHR);
+                            oci_bind_by_name($stmt, ':mes', $mes, -1, SQLT_CHR);
 
-    // Crear un cursor para recibir el resultado
-    $cursor = oci_new_cursor($conn);
-    oci_bind_by_name($stmt, ':resultado', $cursor, -1, OCI_B_CURSOR);
+                            // Crear un cursor para recibir el resultado
+                            $cursor = oci_new_cursor($conn);
+                            oci_bind_by_name($stmt, ':resultado', $cursor, -1, OCI_B_CURSOR);
 
-    // Ejecutar el procedimiento
-    oci_execute($stmt);
+                            // Ejecutar el procedimiento
+                            oci_execute($stmt);
 
-    // Abrir el cursor
-    oci_execute($cursor);
+                            // Abrir el cursor
+                            oci_execute($cursor);
 
-    // Obtener el resultado del cursor
-    $resultado = [];
-    while ($row = oci_fetch_assoc($cursor)) {
-        $resultado[] = $row;
-    }
+                            // Obtener el resultado del cursor
+                            $resultado = [];
+                            while ($row = oci_fetch_assoc($cursor)) {
+                                $resultado[] = $row;
+                            }
 
-     // Verificar si hay resultados
-     if (count($resultado) > 0) {
-        // Incluir el listado de fotos si hay resultados
-        include "listado_fotos.php";
-    } else {
-        // Mostrar mensaje de "Sin resultados" si no hay fotos
-        ?>
-        <div class="container mt-3">
-            <div class="card border-0 m-auto" style="width:400px">
-                <img class="card-img-top opacity-50" src="../img/noFound.png" alt="Sin resultados" style="width:100%">
-                <div class="card-body">
-                    <h2 class="card-title text-center">Sin resultados</h2>
-                    <p class="text-center">No hay fotos subidas en este mes</p>
-                </div>
-            </div>
-        </div>
-        <?php
-    }
+                            // Verificar si hay resultados
+                            if (count($resultado) > 0) {
+                                // Incluir el listado de fotos si hay resultados
+                                include "listado_fotos.php";
+                            } else {
+                                // Mostrar mensaje de "Sin resultados" si no hay fotos
+                                ?>
+                                <div class="container mt-3">
+                                    <div class="card border-0 m-auto" style="width:400px">
+                                        <img class="card-img-top opacity-50" src="../img/noFound.png" alt="Sin resultados" style="width:100%">
+                                        <div class="card-body">
+                                            <h2 class="card-title text-center">Sin resultados</h2>
+                                            <p class="text-center">No hay fotos subidas en este mes</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php
+                            }
 
-    // Liberar recursos
-    oci_free_statement($stmt);
-    oci_free_statement($cursor);
-    oci_close($conn);
+                            // Liberar recursos
+                            oci_free_statement($stmt);
+                            oci_free_statement($cursor);
+                            oci_close($conn);
 
-    ?>
+                            ?>
     
-    <?php } else {?>
-        <div class="container mt-3">
-    <div class="card border-0 m-auto" style="width:400px">
-        <img class="card-img-top opacity-50" src="../img/noFound.png" alt="Sin resultados" style="width:100%">
-        <div class="card-body">
-            <h2 class="card-title text-center">Sin resultados</h2>
-            <p class="text-center">No hay fotos subidas en este mes</p>
-        </div>
-    </div>
-</div>
-<?php
-}
-?>
-
+                            <?php } else {?>
+                                <div class="container mt-3">
+                            <div class="card border-0 m-auto" style="width:400px">
+                                <img class="card-img-top opacity-50" src="../img/noFound.png" alt="Sin resultados" style="width:100%">
+                                <div class="card-body">
+                                    <h2 class="card-title text-center">Sin resultados</h2>
+                                    <p class="text-center">No hay fotos subidas en este mes</p>
+                                </div>
+                            </div>
+                        </div>
+                        <?php
+                        }?>
                     </div>
                 </div>
             </div>
@@ -224,11 +222,11 @@ if (isset($_POST['idUsuario']) && isset($_POST['anno']) && isset($_POST['mes']))
         const reader = new FileReader();
 
         reader.onload = function(e) {
-            preview.src = e.target.result; // Actualiza la src de la imagen con el contenido del archivo
+            preview.src = e.target.result; 
         };
 
         if (file) {
-            reader.readAsDataURL(file); // Lee el archivo como una URL de datos
+            reader.readAsDataURL(file); 
         }
     });
 
