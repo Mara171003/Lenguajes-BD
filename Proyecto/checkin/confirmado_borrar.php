@@ -28,7 +28,7 @@
         <div class="card-body">
             <h1 class="card-title">¡Operación Exitosa!</h1>
             <p class="card-text">La imagen se ha guardado correctamente.</p>
-            <a href="../index.php" class="btn btn-primary">Volver al Inicio</a>
+            <a href="../indexAdmin.php" class="btn btn-primary">Volver al Inicio</a>
         </div>
     </div>
 </div>

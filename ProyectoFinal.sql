@@ -113,7 +113,7 @@ CREATE SEQUENCE seq_pagos_id START WITH 1 INCREMENT BY 1;
 --------------------------------------------------------------------------------
 --NOTA MES
 --------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE sp_insert_notames (
+/*CREATE OR REPLACE PROCEDURE sp_insert_notames (
     p_id_check IN NUMBER,
     p_nota_mensual IN VARCHAR2(50) NOT NULL,
     p_id_foto IN NUMBER,
@@ -198,7 +198,7 @@ EXCEPTION
         -- Obtiene el mensaje de error
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
 END;
-/
+/*/
 
 --------------------------------------------------------------------------------
 --FOTOS
