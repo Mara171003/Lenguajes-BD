@@ -15,10 +15,16 @@ $idFoto = isset($_POST['idFoto']) ? intval($_POST['idFoto']) : 0;
 $nota = isset($_POST['nota']) ? trim($_POST['nota']) : '';
 $idUsuario= $_POST['idUsuario']; 
 
-// Verifica si los datos son válidos
+
+
+// Verifica si los datos son válidos\
+/*
 if ($idFoto <= 0 || empty($nota)) {
     die('Datos inválidos.');
-}
+}*/
+echo $idFoto;
+
+
 
 // Prepara la llamada al procedimiento almacenado
 $sql = 'BEGIN UpdateNotaMes(:idFoto, :nota); END;';

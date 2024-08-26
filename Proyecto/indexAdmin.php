@@ -105,7 +105,7 @@
 
 
                     $p_cursor_usuario = oci_new_cursor($conn);
-                    $p_cursor_usuario = oci_new_cursor($conn);
+                    //$p_cursor_usuario = oci_new_cursor($conn);
 
                     // si algun filtro esta siendo utilizado
                     if($_SESSION['filtro']===true){
