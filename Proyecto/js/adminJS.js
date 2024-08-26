@@ -45,11 +45,12 @@ $(document).on('click', '.btn-pago', function AgregarPago() {
             };
                 $.post('../sistema/cambioSuscripcion.php', postData, function (respuesta) {
                     console.log(respuesta);
-                    if(respuesta=='1'){
-                        alert('Este usuario ya tiene una fecha asignada');
-                    }
-                    if(respuesta=='2'){
-                        alert('Fecha de Pago asignado');
+                    if(respuesta == true){
+                        alert('Pago actualizado'); 
+                        window.location.href = '../';
+                    }else{
+                        alert('Pago agregado'); 
+                        window.location.href = '../';
                     }
                 });
 

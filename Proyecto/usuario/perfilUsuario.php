@@ -34,9 +34,12 @@ $conn = Conecta();
 </head>
 
 <body>
+    <div class="text-white justify-content-between" id="headerP">
+        <h3 class="col-6 mt-2 mx-3"><?php echo $_SESSION["usuario"];?></h3>
+        <a href="../index.php" class="btn btn-primary my-2 mx-3 my-auto px-3">Atras</a>
+    </div>
     <!-- Mostrar datos técnicos -->
     <?php
-    include '../templates/header.php';
     include "../DAL/usuario.php"; 
 
     //query
@@ -194,16 +197,14 @@ $conn = Conecta();
         <div class="mt-4 p-5">
             <div class="d-flex justify-content-between my-5">
                 <div class="mt-4 py-5">
-                    <a href="editarDatosUsuario.php?id=<?= $id ?>"
-                        class="btn btn-outline-success btn-lg">Editar Información</a>
+                    <a href="editarDatosUsuario.php?id=<?= $id ?>" class="btn btn-outline-success btn-lg">Editar
+                        Información</a>
                 </div>
                 <div class="mt-4 py-5">
-                    <a href="../rutinas/rutinas.php?id=<?= $id ?>"
-                        class="btn btn-outline-success btn-lg">Rutinas</a>
+                    <a href="../rutinas/rutinas.php?id=<?= $id ?>" class="btn btn-outline-success btn-lg">Rutinas</a>
                 </div>
                 <div class="mt-4 py-5">
-                    <a href="../checkin/check-in.php?id=<?= $id ?>"
-                        class="btn btn-outline-success btn-lg">Check-In</a>
+                    <a href="../checkin/check-in.php?id=<?= $id ?>" class="btn btn-outline-success btn-lg">Check-In</a>
                 </div>
             </div>
         </div>

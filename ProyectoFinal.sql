@@ -284,6 +284,24 @@ EXCEPTION
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
 END;
 /
+
+CREATE OR REPLACE PROCEDURE sp_update_usuario (
+    p_valor VARCHAR2,
+    p_id_usuario IN NUMBER
+) AS
+BEGIN
+    UPDATE USUARIO
+    SET TIPO_SUSCRIPCION = p_valor
+    WHERE ID_USUARIO = p_id_usuario;
+
+    IF SQL%ROWCOUNT > 0 THEN
+        COMMIT;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
 --------------------------------------------------------------------------------
 --DETALLES USUARIO
 --------------------------------------------------------------------------------
@@ -311,7 +329,6 @@ EXCEPTION
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
 END;
 /
-
 
 --
 CREATE OR REPLACE PROCEDURE sp_update_detalles_usuario (
@@ -749,6 +766,23 @@ END;
 /
 --------------------------------------------------------------------------------
 --PAGOS
+-------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE sp_verificar_pagos (
+    p_id_usuario IN NUMBER,
+    p_existe OUT NUMBER
+) AS
+BEGIN
+
+    SELECT COUNT(*) INTO p_existe
+    FROM PAGOS
+    WHERE ID_USUARIO = p_id_usuario;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
 CREATE OR REPLACE PROCEDURE sp_get_pagos (
     p_id_usuario IN NUMBER,
     p_cursor OUT SYS_REFCURSOR
@@ -760,8 +794,45 @@ BEGIN
     WHERE ID_USUARIO = p_id_usuario;
 END;
 /
-commit;
 
+CREATE OR REPLACE PROCEDURE sp_update_pagos (
+    p_id_usuario IN NUMBER,
+    p_monto IN NUMERIC,
+    p_dia_pago IN NUMBER,
+    p_estado IN VARCHAR2
+) AS
+BEGIN
+    UPDATE PAGOS
+    SET MONTO = p_monto,
+    DIA_PAGO = p_dia_pago,
+    ESTADO = p_estado
+    WHERE ID_USUARIO = p_id_usuario;
+
+    IF SQL%ROWCOUNT > 0 THEN
+        COMMIT;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+
+CREATE OR REPLACE PROCEDURE sp_insert_pagos (
+    p_id_usuario IN NUMBER,
+    p_monto IN NUMBER,
+    p_dia_pago IN NUMBER,
+    p_estado IN VARCHAR2
+) AS
+BEGIN
+    -- Insertar un nuevo registro en la tabla PAGOS
+    INSERT INTO PAGOS (ID_PAGO, MONTO, DIA_PAGO, ESTADO,ID_USUARIO)
+    VALUES (seq_pagos_id.NEXTVAL, p_monto, p_dia_pago, p_estado,p_id_usuario);
+
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
 
 -------------------------------------------------------------------------------
 --SP llamar vista usuario detalles

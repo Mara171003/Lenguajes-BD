@@ -35,7 +35,7 @@
             <div class="container-fluid">
                 <h4 class="col-3 mt-2 mx-3"><?php echo $_SESSION["usuario"];?></h4>
 
-                <div class="collapse navbar-collapse ">
+                <div class="collapse navbar-collapse mx-auto">
                     <form class="d-flex container-fluid justify-content-center align-items-center" method="POST"
                         action="indexAdmin.php">
                         <div class="col-3">
@@ -83,7 +83,6 @@
                         $_SESSION['filtro_nombre'] = isset($_POST['filtro_nombre']) ? $_POST['filtro_nombre'] : null;
                         $_SESSION['filtro_apellido'] = isset($_POST['filtro_apellido']) ? $_POST['filtro_apellido'] : null;
                         $_SESSION['activo'] = isset($_POST['activo']) ? 'activo' : null;
-
 
                         header('Location: indexAdmin.php');
                     }

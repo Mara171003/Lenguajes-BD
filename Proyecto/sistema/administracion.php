@@ -249,11 +249,6 @@ if (empty($_SESSION['usuario'])) { // Si no hay una sesión usuario
             </div>
         </div>
     </div>
-
-    <!-- Bootstrap JS (si lo necesitas) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-NUiUNB1wlFl0J+JJ2anR1+SwMZPWQ+nLaUvysvRf7C3g7OId+KtXiq+A5yT8+Kq6" crossorigin="anonymous">
-    </script>
     <script src="../js/adminJS.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous">
