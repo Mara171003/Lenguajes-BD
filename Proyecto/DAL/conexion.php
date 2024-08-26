@@ -1,7 +1,7 @@
 <?php
 // Configuración de conexión
 function Conecta() {
-    $username = 'CPROYECTO';
+    $username = 'C##PROYECTO';
     $password = 'proyectoSQL';
     $connection_string = 'localhost/orcl';
 
