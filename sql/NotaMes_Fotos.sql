@@ -71,13 +71,13 @@ CREATE OR REPLACE PROCEDURE mesValidacionNotaMes(
     v_sql VARCHAR2(1000);
     v_count INT;
 BEGIN
-    -- Construcción del SQL dinámico
+    -- Construcciï¿½n del SQL dinï¿½mico
     v_sql := 'SELECT COUNT(*) FROM NOTAMES NM JOIN FOTOS F ON NM.ID_FOTO = F.ID_FOTO ' ||
              'WHERE F.ID_USUARIO = :idUsuario ' ||
              'AND F.MES = TO_CHAR(SYSDATE, ''Month'', ''NLS_DATE_LANGUAGE=SPANISH'') ' ||
              'AND F.ANNO = TO_CHAR(SYSDATE, ''YYYY'')';
 
-    -- Ejecutar el SQL dinámico y obtener el resultado
+    -- Ejecutar el SQL dinï¿½mico y obtener el resultado
     EXECUTE IMMEDIATE v_sql INTO v_count USING p_idUsuario;
 
     -- Validar el resultado
@@ -102,10 +102,10 @@ CREATE OR REPLACE PROCEDURE obtenerUltimoIdFoto(
 ) AS
     v_sql VARCHAR2(1000);
 BEGIN
-    -- Construcción del SQL dinámico
+    -- Construcciï¿½n del SQL dinï¿½mico
     v_sql := 'SELECT NVL(MAX(ID_FOTO), 0) FROM FOTOS';
 
-    -- Ejecutar el SQL dinámico y obtener el resultado
+    -- Ejecutar el SQL dinï¿½mico y obtener el resultado
     EXECUTE IMMEDIATE v_sql INTO p_idFoto;
 
 EXCEPTION
@@ -127,14 +127,14 @@ CREATE OR REPLACE PROCEDURE INSERTAR_FOTO (
     v_count NUMBER;
     v_sql VARCHAR2(1000);
 BEGIN
-    -- SQL Dinámico para validar si el usuario existe
+    -- SQL Dinï¿½mico para validar si el usuario existe
     v_sql := 'SELECT COUNT(*) FROM CPROYECTO.USUARIO WHERE ID_USUARIO = :1';
     EXECUTE IMMEDIATE v_sql INTO v_count USING p_idUsuario;
     IF v_count = 0 THEN
-        -- El usuario no existe, lanzar una excepción
+        -- El usuario no existe, lanzar una excepciï¿½n
         RAISE_APPLICATION_ERROR(-20001, 'El usuario con ID ' || p_idUsuario || ' no existe.');
     END IF;
-    -- SQL Dinámico para insertar la foto si el usuario existe
+    -- SQL Dinï¿½mico para insertar la foto si el usuario existe
     v_sql := 'INSERT INTO CPROYECTO.FOTOS (mes, anno, ruta_foto, id_usuario) ' ||
              'VALUES (:1, :2, :3, :4)';
     EXECUTE IMMEDIATE v_sql USING p_mes, p_anno, p_rutaFoto, p_idUsuario;
@@ -157,9 +157,9 @@ CREATE OR REPLACE PROCEDURE crearNotaMes(
 ) AS
     v_sql VARCHAR2(1000);
 BEGIN
-    -- SQL Dinámico para insertar la nota mensual
+    -- SQL Dinï¿½mico para insertar la nota mensual
     v_sql := 'INSERT INTO NOTAMES (NOTA_MENSUAL, ID_FOTO) VALUES (:1, :2)';
-    -- Ejecutar la consulta SQL dinámica
+    -- Ejecutar la consulta SQL dinï¿½mica
     EXECUTE IMMEDIATE v_sql USING p_notaMensual, p_idFoto;
 EXCEPTION
     -- Manejo de excepciones
@@ -183,9 +183,9 @@ BEGIN
     WHERE f.mes = p_mes AND f.anno = p_anno AND f.id_usuario = p_idUsuario;
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
-        DBMS_OUTPUT.PUT_LINE('No se encontraron fotos para los parámetros proporcionados.');
+        DBMS_OUTPUT.PUT_LINE('No se encontraron fotos para los parï¿½metros proporcionados.');
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Ocurrió un error: ' || SQLERRM);
+        DBMS_OUTPUT.PUT_LINE('Ocurriï¿½ un error: ' || SQLERRM);
 END obtenerFotos;
 /
 ------------------------------------------------------------------------------------------------
@@ -218,9 +218,9 @@ CREATE OR REPLACE PROCEDURE UpdateNotaMes (
 ) AS
     v_sql VARCHAR2(1000);
 BEGIN
-    -- Construcción de la consulta SQL dinámica
+    -- Construcciï¿½n de la consulta SQL dinï¿½mica
     v_sql := 'UPDATE notames SET NOTA_MENSUAL = :1 WHERE ID_FOTO = :2';
-    -- Ejecutar la consulta SQL dinámica
+    -- Ejecutar la consulta SQL dinï¿½mica
     EXECUTE IMMEDIATE v_sql USING p_nota, p_idFoto;
     COMMIT;
 EXCEPTION
@@ -349,9 +349,9 @@ CREATE OR REPLACE PACKAGE BODY Check_Pkg AS
         WHERE f.mes = p_mes AND f.anno = p_anno AND f.id_usuario = p_idUsuario;
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
-            DBMS_OUTPUT.PUT_LINE('No se encontraron fotos para los parámetros proporcionados.');
+            DBMS_OUTPUT.PUT_LINE('No se encontraron fotos para los parï¿½metros proporcionados.');
         WHEN OTHERS THEN
-            DBMS_OUTPUT.PUT_LINE('Ocurrió un error: ' || SQLERRM);
+            DBMS_OUTPUT.PUT_LINE('Ocurriï¿½ un error: ' || SQLERRM);
             RAISE;
     END obtenerFotos;
 
