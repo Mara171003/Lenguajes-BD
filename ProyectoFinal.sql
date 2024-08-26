@@ -1,8 +1,5 @@
 --creacion de tablas
-CREATE TABLE ROLES (
-    ID_ROL INT NOT NULL,
-    ROL VARCHAR2(20) NOT NULL
-);
+
 
 CREATE TABLE USUARIO (
     ID_USUARIO INT NOT NULL, 
@@ -14,7 +11,7 @@ CREATE TABLE USUARIO (
     ID_ROL INT,
     PASSWORD VARCHAR2(255)
 );
-
+--admin123
 CREATE TABLE DETALLES_USUARIO (
     ID_DETALLE INT NOT NULL, 
     FECHA_NACIMIENTO DATE,
@@ -44,9 +41,10 @@ CREATE TABLE EJERCICIO (
     ID_RUTINA INT
 );
 
+-- Crear las tablas
 CREATE TABLE NOTAMES (
     ID_CHECK INT NOT NULL,
-    NOTA_MENSUAL VARCHAR2(1000) NOT NULL,
+    NOTA_MENSUAL VARCHAR2(1000),
     ID_FOTO INT
 );
 
@@ -58,6 +56,8 @@ CREATE TABLE FOTOS (
     ID_USUARIO INT
 );
 
+--DROP TABLE NOTAMES;
+--DROP TABLE FOTOS;
 CREATE TABLE PAGOS (
     ID_PAGO INT NOT NULL,
     MONTO NUMERIC(10, 2),
@@ -82,6 +82,10 @@ ALTER TABLE NOTAMES ADD CONSTRAINT pk_notaMes PRIMARY KEY (ID_CHECK);
 ALTER TABLE FOTOS ADD CONSTRAINT pk_fotos PRIMARY KEY (ID_FOTO);
 ALTER TABLE PAGOS ADD CONSTRAINT pk_pagos PRIMARY KEY (ID_PAGO);
 
+CREATE TABLE ROLES (
+    ID_ROL INT NOT NULL,
+    ROL VARCHAR2(20) NOT NULL
+);
 --Constraints FK
 
 ALTER TABLE USUARIO ADD CONSTRAINT fk_usuario_roles FOREIGN KEY (ID_ROL) REFERENCES ROLES (ID_ROL);
@@ -91,7 +95,16 @@ ALTER TABLE EJERCICIO ADD CONSTRAINT fk_ejercicio_rutina FOREIGN KEY (ID_RUTINA)
 ALTER TABLE NOTAMES ADD CONSTRAINT fk_notaMes_fotos FOREIGN KEY (ID_FOTO) REFERENCES FOTOS (ID_FOTO) ON DELETE CASCADE;
 ALTER TABLE FOTOS ADD CONSTRAINT fk_fotos_usuario FOREIGN KEY (ID_USUARIO) REFERENCES USUARIO (ID_USUARIO) ON DELETE CASCADE;
 ALTER TABLE PAGOS ADD CONSTRAINT fk_pagos_usuario FOREIGN KEY (ID_USUARIO) REFERENCES USUARIO (ID_USUARIO) ON DELETE CASCADE;
-  
+
+  --PARA NOTAMES Y FOTOS
+ALTER TABLE notames
+DROP CONSTRAINT FK_NOTAMES_FOTOS;
+
+ALTER TABLE notames
+ADD CONSTRAINT FK_NOTAMES_FOTOS
+FOREIGN KEY (id_foto) REFERENCES fotos(id_foto)
+ON DELETE CASCADE;
+
 --Auto increment
 CREATE SEQUENCE seq_usuario_id START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_detalle_id START WITH 1 INCREMENT BY 1;
@@ -1110,15 +1123,6 @@ CREATE OR REPLACE PACKAGE BODY pkg_detalles_usuario AS
 END pkg_detalles_usuario;
 /
 
-
-
-
-
-
-
-
-
-
 -- Eliminar la restricción de clave foránea en la tabla DETALLES_USUARIO
 ALTER TABLE DETALLES_USUARIO 
    DROP CONSTRAINT fk_detalles_usuario_usuario;
@@ -1142,3 +1146,137 @@ ALTER TABLE FOTOS
 -- Eliminar la restricción de clave foránea en la tabla PAGOS
 ALTER TABLE PAGOS 
    DROP CONSTRAINT fk_pagos_usuario;
+
+
+/*
+--ALTER USER C##PROYECTO QUOTA UNLIMITED ON USERS;
+INSERT INTO USUARIO(ID_USUARIO,NOMBRE,PRIMER_APELLIDO,SEGUNDO_APELLIDO,CORREO,TIPO_SUSCRIPCION,ID_ROL,PASSWORD)
+VALUES(1,'admin','admin','admin','admin@gmail.com','basico',1,'admin');
+
+*/
+
+
+--CHECK PHP ----------------------------------------------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE mesValidacionNotaMes(
+    p_idUsuario IN INT,
+    p_existe OUT INT
+) AS
+BEGIN
+    SELECT COUNT(*)
+    INTO p_existe
+    FROM NOTAMES NM
+    JOIN FOTOS F ON NM.ID_FOTO = F.ID_FOTO
+    WHERE F.ID_USUARIO = p_idUsuario
+    AND F.MES = TO_CHAR(SYSDATE, 'Month', 'NLS_DATE_LANGUAGE=SPANISH')
+    AND F.ANNO = TO_CHAR(SYSDATE, 'YYYY');
+    
+    IF p_existe > 0 THEN
+        p_existe := 1;
+    ELSE
+        p_existe := 0;
+    END IF;
+END;
+/
+
+CREATE OR REPLACE PROCEDURE obtenerUltimoIdFoto(
+    p_idFoto OUT INT
+) AS
+BEGIN
+    SELECT NVL(MAX(ID_FOTO), 0)
+    INTO p_idFoto
+    FROM FOTOS;
+END;
+/
+
+CREATE OR REPLACE PROCEDURE INSERTAR_FOTO (
+    p_mes IN VARCHAR2,
+    p_anno IN VARCHAR2,
+    p_rutaFoto IN VARCHAR2,
+    p_idUsuario IN NUMBER
+) AS
+    v_count NUMBER;
+BEGIN
+    -- Validar si el usuario existe
+    SELECT COUNT(*)
+    INTO v_count
+    FROM CPROYECTO.USUARIO
+    WHERE ID_USUARIO = p_idUsuario;
+
+    IF v_count = 0 THEN
+        -- El usuario no existe, lanzar una excepci�n
+        RAISE_APPLICATION_ERROR(-20001, 'El usuario con ID ' || p_idUsuario || ' no existe.');
+    END IF;
+
+    -- Insertar la foto si el usuario existe
+    INSERT INTO CPROYECTO.FOTOS (mes, anno, ruta_foto, id_usuario)
+    VALUES (p_mes, p_anno, p_rutaFoto, p_idUsuario);
+    
+EXCEPTION
+    -- Captura cualquier error que ocurra durante la inserci�n
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Error al insertar la foto: ' || SQLERRM);
+END;
+/
+
+SELECT id_usuario
+FROM usuario
+WHERE id_usuario = 3;
+
+CREATE OR REPLACE PROCEDURE crearNotaMes(
+    p_notaMensual IN VARCHAR2,
+    p_idFoto IN INT
+) AS
+BEGIN
+    INSERT INTO NOTAMES (NOTA_MENSUAL, ID_FOTO)
+    VALUES (p_notaMensual, p_idFoto);
+END;
+/
+
+CREATE OR REPLACE PROCEDURE obtenerFotos(
+    p_idUsuario IN NUMBER,
+    p_anno IN VARCHAR2,
+    p_mes IN VARCHAR2,
+    p_resultado OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_resultado FOR
+    SELECT f.*, nm.*
+    FROM fotos f
+    LEFT JOIN notames nm ON f.id_foto = nm.id_foto
+    WHERE f.mes = p_mes AND f.anno = p_anno AND f.id_usuario = p_idUsuario;
+END;
+/
+
+CREATE OR REPLACE PROCEDURE eliminar_foto (
+    p_id_foto IN INT
+) AS
+BEGIN
+    DELETE FROM notames WHERE id_foto = p_id_foto;
+    DELETE FROM fotos WHERE id_foto = p_id_foto;
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Manejo de errores
+        ROLLBACK;
+        RAISE;
+END;
+/
+
+CREATE OR REPLACE PROCEDURE UpdateNotaMes (
+    p_idFoto IN NUMBER,
+    p_nota IN VARCHAR2
+) AS
+BEGIN
+    UPDATE notames
+    SET NOTA_MENSUAL = p_nota
+    WHERE ID_FOTO = p_idFoto;
+    COMMIT;
+END;
+/
+
+
+SELECT * FROM NOTAMES;
+SELECT * FROM FOTOS;
+SELECT * FROM USUARIO;
+
+---CHECK READ.PHP

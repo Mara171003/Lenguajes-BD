@@ -6,7 +6,7 @@ if (empty($_SESSION['usuario'])) { // si no hay una sesión usuario
     header("location: usuario/vistaLogin.php"); // devolver al login
     exit();
 }
-$id = intval($_GET['id']); // Asegúrate de que el ID sea un entero
+$id = intval($_GET['id']); 
 
 include "../DAL/conexion.php";
 

@@ -1,82 +1,128 @@
 <?php
 
-    include '../DAL/conexion.php';
+include '../DAL/conexion.php';
+session_start();
 
-    session_start();
+$conn = conecta();
+
 
 // INICIO SUBIR FOTO ===========================================================================================
 
-    //extraer fecha actual en string -------------------------------------------------
-    $fechaActual = date ('Y-m-d');//formato de fecha
-    $anno = strftime('%Y', strtotime($fechaActual)); // Obtener el año
-    $mes = strftime('%B', strtotime($fechaActual)); // Obtener el mes
-    // Obtener el número de mes actual
-    $numero_mes = date('n', strtotime($fechaActual));
-    
-    // Definir los nombres de los meses en español
-    $meses_espanol = array(
-        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-    );
-    // Obtener el número de mes actual
-    $numero_mes = date('n', strtotime($fechaActual));
+$fechaActual = date('Y-m-d');
+$anno = strftime('%Y', strtotime($fechaActual));
+$numero_mes = date('n', strtotime($fechaActual));
 
-    // Obtener el nombre del mes en español segun el numero
-    $mes = $meses_espanol[$numero_mes - 1]; 
+$meses_espanol = array(
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+);
 
-    $idUsuario = $_SESSION['id']; 
-    //--------------------------------------------------------------------------------
+$mes = $meses_espanol[$numero_mes - 1];
+$id = $_SESSION['id'];
+if (isset($_FILES['file'])) {
+    $file = $_FILES['file'];
+    $nombreImagen = $file['name'];
+    $tipoImagen = $file['type'];
+    $size = $file['size'];
+    $idUsuario = intval($_POST['id']);
 
+    $extensiones = array("image/jpg", "image/jpeg", "image/png");
 
-    if(isset($_FILES['file'])){//al recibir el post de la imagen
-
-        $file = $_FILES['file'];//meterlo en la variable
-        $nombreImagen = $file['name'];
-        $tipoImagen = $file['type'];
-        $size = $file['size'];
-
-        //validar extension para imagen
-        $extensiones = array("image/jpg","image/jpeg","image/png"); 
-
-        
-
-        if(!in_array($tipoImagen, $extensiones)){//si no es de la extension permitida
-            header("Location: check-in.php");
-        }
-
-        if($size > 5*1024*1024){
-            echo "El tamaño maximo permitido son 5MB";
-            header("Location: check-in.php");
-            die();
-        }
-
-        //crear directorio de imagenes subidas
-        if(!is_dir("uploads")){//si no exite carpeta de subidas
-            mkdir("uploads",0777);//crear carpeta
-        }
-
-        //mover archivo a la carpeta
-        move_uploaded_file($file['tmp_name'], 'uploads/'.$nombreImagen);//guardar imagen subida en carpeta
-
-        $rutaFoto= 'uploads/'.$nombreImagen;//ruta completa con formato
-
-        $sqlMesValidacion=Conecta()->query("SELECT * FROM notaMes where id_usuario = $idUsuario");//evitar duplciados en meses
-        if(mysqli_num_rows($sqlMesValidacion)>0){
-            //notas del mes ya está registrado o creado
-            $sqlFoto = Conecta()->query("INSERT INTO fotos (mes, anno, ruta_foto, id_usuario) VALUES ('$mes', '$anno', '$rutaFoto', $idUsuario);"); 
-        }else{
-            //notas del mes aun no creado / entonces se crea
-            $sqlMes = Conecta()->query("INSERT INTO notaMes (nota_mensual, id_usuario) VALUES (null, $idUsuario);");
-            $sqlFoto = Conecta()->query("INSERT INTO fotos (mes, anno, ruta_foto, id_usuario) VALUES ('$mes', '$anno', '$rutaFoto', $idUsuario);");
-        }
-
-        header("Location: check-in.php");
-        exit;
-
-    }else{
-        header("Location: check-in.php");
+    if (!in_array($tipoImagen, $extensiones)) {
+        header("Location: check-in.php?id=$idUsuario");
+        exit();
     }
 
-// FIN SUBIR FOTO ===========================================================================================
+    if ($size > 5 * 1024 * 1024) {
+        echo "El tamaño máximo permitido son 5MB";
+        header("Location: check-in.php?id=$idUsuario");
+        exit();
+    }
+
+    if (!is_dir("uploads")) {
+        mkdir("uploads", 0777);
+    }
+
+    move_uploaded_file($file['tmp_name'], 'uploads/' . $nombreImagen);
+    $rutaFoto = 'uploads/' . $nombreImagen;
+
+    // Validar si el mes ya existe relacionado con alguna nota
+    $sql = "BEGIN mesValidacionNotaMes(:idUsuario, :existe); END;";
+    $stmt = oci_parse($conn, $sql);
+    oci_bind_by_name($stmt, ':idUsuario', $idUsuario);
+    oci_bind_by_name($stmt, ':existe', $existeMes, 32);
+
+    if (!oci_execute($stmt)) {
+        $error = oci_error($stmt);
+        echo "Error en mesValidacionNotaMes: " . $error['message'];
+        exit();
+    }
+
+    if ($existeMes > 0) {
+        // Notas del mes ya están registradas, se inserta la foto
+        $sql = "BEGIN insertar_Foto(:mes, :anno, :rutaFoto, :idUsuario); END;";
+        $stmt = oci_parse($conn, $sql);
+        oci_bind_by_name($stmt, ':mes', $mes);
+        oci_bind_by_name($stmt, ':anno', $anno);
+        oci_bind_by_name($stmt, ':rutaFoto', $rutaFoto);
+        oci_bind_by_name($stmt, ':idUsuario', $idUsuario);
     
+        if (oci_execute($stmt)) {
+            echo "Foto insertada exitosamente.";
+        } else {
+            $error = oci_error($stmt);
+            echo "Error al insertar la foto: " . $error['message'];
+            exit();
+        }
+    } else {
+        $sql = "BEGIN insertar_Foto(:mes, :anno, :rutaFoto, :idUsuario); END;";
+        $stmt = oci_parse($conn, $sql);
+        oci_bind_by_name($stmt, ':mes', $mes);
+        oci_bind_by_name($stmt, ':anno', $anno);
+        oci_bind_by_name($stmt, ':rutaFoto', $rutaFoto);
+        oci_bind_by_name($stmt, ':idUsuario', $idUsuario);
+    
+        if (oci_execute($stmt)) {
+            echo "Notas del mes creadas e imagen insertada exitosamente.";
+        } else {
+            $error = oci_error($stmt);
+            echo "Error al insertar la foto : " . $error['message'];
+            exit();
+        }
+
+        // Obtener el ID de la foto insertada
+        $sql = "BEGIN obtenerUltimoIdFoto(:idFoto); END;";
+        $stmt = oci_parse($conn, $sql);
+        oci_bind_by_name($stmt, ':idFoto', $idFoto, 32);
+ 
+        if (!oci_execute($stmt)) {
+            $error = oci_error($stmt);
+            echo "Error al obtener el ID de la foto: " . $error['message'];
+            exit();
+        }
+
+        // Crear la nota del mes con el ID de la foto obtenida
+        $sql = "BEGIN crearNotaMes(:notaMensual, :idFoto); END;";
+        $stmt = oci_parse($conn, $sql);
+        $notaMensual = NULL; // Nota nula al principio
+        oci_bind_by_name($stmt, ':notaMensual', $notaMensual);
+        oci_bind_by_name($stmt, ':idFoto', $idFoto);
+
+        if (oci_execute($stmt)) {
+            echo "Notas del mes creadas e imagen insertada exitosamente.";
+        } else {
+            $error = oci_error($stmt);
+            echo "Error al crear las notas del mes después de insertar la foto: " . $error['message'];
+            exit();
+        }
+    }
+
+    header("Location: confirmado_crear.php?id=$idUsuario");
+    exit();
+} else {
+    header("Location: check-in.php?id=$idUsuario");
+    exit();
+}
+
+// FIN SUBIR FOTO ===========================================================================================
 
 ?>
