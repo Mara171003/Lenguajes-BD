@@ -1,6 +1,4 @@
 --creacion de tablas
-
-
 CREATE TABLE USUARIO (
     ID_USUARIO INT NOT NULL, 
     NOMBRE VARCHAR2(50) NOT NULL,
@@ -11,7 +9,7 @@ CREATE TABLE USUARIO (
     ID_ROL INT,
     PASSWORD VARCHAR2(255)
 );
---admin123
+
 CREATE TABLE DETALLES_USUARIO (
     ID_DETALLE INT NOT NULL, 
     FECHA_NACIMIENTO DATE,
@@ -41,7 +39,6 @@ CREATE TABLE EJERCICIO (
     ID_RUTINA INT
 );
 
--- Crear las tablas
 CREATE TABLE NOTAMES (
     ID_CHECK INT NOT NULL,
     NOTA_MENSUAL VARCHAR2(1000),
@@ -56,8 +53,6 @@ CREATE TABLE FOTOS (
     ID_USUARIO INT
 );
 
---DROP TABLE NOTAMES;
---DROP TABLE FOTOS;
 CREATE TABLE PAGOS (
     ID_PAGO INT NOT NULL,
     MONTO NUMERIC(10, 2),
@@ -115,255 +110,6 @@ CREATE SEQUENCE seq_foto_id START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE seq_pagos_id START WITH 1 INCREMENT BY 1;
 
 --------------------------------------------------------------------------------
--- Procedimientos almacenados 
-/*set serveroutput on;*/
---------------------------------------------------------------------------------
---USUARIO
---------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE sp_insert_usuario (
-    p_id_usuario IN NUMBER,
-    p_nombre IN VARCHAR2,
-    p_primer_apellido IN VARCHAR2,
-    p_segundo_apellido IN VARCHAR2,
-    p_correo IN VARCHAR2,
-    p_tipo_suscripcion IN VARCHAR2,
-    p_id_rol IN NUMBER,
-    p_password IN VARCHAR2,
-    p_result OUT VARCHAR2
-) AS
-BEGIN
-    INSERT INTO USUARIO (ID_USUARIO, NOMBRE, PRIMER_APELLIDO, SEGUNDO_APELLIDO, CORREO, TIPO_SUSCRIPCION, ID_ROL, PASSWORD)
-    VALUES (seq_usuario_id.NEXTVAL, p_nombre, p_primer_apellido, p_segundo_apellido, p_correo, p_tipo_suscripcion, p_id_rol, p_password);
-
-    p_result := 'Insertado correctamente';
-EXCEPTION
-    WHEN OTHERS THEN
-        p_result := SQLERRM;
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_update_usuario (
-    p_id_usuario IN NUMBER,
-    p_nombre IN VARCHAR2,
-    p_primer_apellido IN VARCHAR2,
-    p_segundo_apellido IN VARCHAR2,
-    p_correo IN VARCHAR2,
-    p_tipo_suscripcion IN VARCHAR2,
-    p_id_rol IN NUMBER,
-    p_password IN VARCHAR2,
-    p_result OUT VARCHAR2
-) AS
-BEGIN
-    UPDATE USUARIO
-    SET NOMBRE = p_nombre,
-        PRIMER_APELLIDO = p_primer_apellido,
-        SEGUNDO_APELLIDO = p_segundo_apellido,
-        CORREO = p_correo,
-        TIPO_SUSCRIPCION = p_tipo_suscripcion,
-        ID_ROL = p_id_rol,
-        PASSWORD = p_password
-    WHERE ID_USUARIO = p_id_usuario;
-
-    p_result := 'Actualizado correctamente';
-EXCEPTION
-    WHEN OTHERS THEN
-        p_result := SQLERRM;
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_get_usuario (
-    p_id_usuario IN NUMBER,
-    p_cursor OUT SYS_REFCURSOR
-) AS
-BEGIN
-    OPEN p_cursor FOR
-        SELECT ID_USUARIO, NOMBRE, PRIMER_APELLIDO, SEGUNDO_APELLIDO, CORREO, TIPO_SUSCRIPCION, ID_ROL
-        FROM USUARIO
-        WHERE ID_USUARIO = p_id_usuario;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
---** Para admin **--
-CREATE OR REPLACE PROCEDURE sp_get_usuario_admin (
-    p_id_usuario IN NUMBER,
-    p_cursor OUT SYS_REFCURSOR
-) AS
-BEGIN
-    OPEN p_cursor FOR
-        SELECT ID_USUARIO, NOMBRE, PRIMER_APELLIDO, SEGUNDO_APELLIDO, CORREO, TIPO_SUSCRIPCION, ID_ROL
-        FROM USUARIO
-        WHERE ID_USUARIO != p_id_usuario;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_get_correo (
-    p_correo IN VARCHAR2,
-    p_existe OUT NUMBER
-) AS
-BEGIN
-    SELECT COUNT(*) INTO p_existe
-    FROM usuario
-    WHERE correo = p_correo;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_get_usuario_X_correo (
-    p_correo IN VARCHAR2,
-    p_cursor OUT SYS_REFCURSOR
-) AS
-BEGIN
-    -- Abre un cursor para seleccionar los datos
-    OPEN p_cursor FOR
-    SELECT * 
-    FROM USUARIO
-    WHERE CORREO = p_correo;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_usuario_login (
-    p_correo IN VARCHAR2,
-    p_password IN VARCHAR2,
-    p_cursor OUT SYS_REFCURSOR
-) AS
-BEGIN
-    OPEN p_cursor FOR
-        SELECT *
-        FROM USUARIO
-        WHERE CORREO = p_correo and PASSWORD = p_password;
-        
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
-
-CREATE OR REPLACE PROCEDURE sp_get_usuario_filter (
-    p_id_usuario IN NUMBER,
-    p_estado IN VARCHAR2 DEFAULT NULL,
-    p_nombre IN VARCHAR2 DEFAULT NULL,
-    p_apellido IN VARCHAR2 DEFAULT NULL,
-    p_cursor_usuario OUT SYS_REFCURSOR
-) AS
-     v_sql VARCHAR2(1000);
-BEGIN
-    --indicar que muestre todos los usuarios menos el de admin
-     v_sql := 'SELECT * FROM V_USUARIOS_PAGOS WHERE ID_USUARIO != ' || p_id_usuario;
-
---filtros-----
---verifica contenido de parametros y concatena los where= y los and where, para la consulta final.
-
-    IF p_nombre IS NOT NULL THEN
-        v_sql := v_sql || ' AND NOMBRE LIKE ''%' || p_nombre || '%''';
-    END IF;
-    
-    IF p_apellido IS NOT NULL THEN
-        v_sql := v_sql || ' AND (PRIMER_APELLIDO LIKE ''%' || p_apellido || '%'' OR SEGUNDO_APELLIDO LIKE ''%' || p_apellido || '%'')';
-    END IF;
-    
-    IF p_estado IS NOT NULL THEN
-        v_sql := v_sql || ' AND ESTADO = ''' || p_estado || '''';
-    END IF;
-    
-    OPEN p_cursor_usuario FOR v_sql;
-    
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_update_usuario (
-    p_valor VARCHAR2,
-    p_id_usuario IN NUMBER
-) AS
-BEGIN
-    UPDATE USUARIO
-    SET TIPO_SUSCRIPCION = p_valor
-    WHERE ID_USUARIO = p_id_usuario;
-
-    IF SQL%ROWCOUNT > 0 THEN
-        COMMIT;
-    END IF;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
---------------------------------------------------------------------------------
---DETALLES USUARIO
---------------------------------------------------------------------------------
-CREATE OR REPLACE TRIGGER trg_insert_detalles_usuario
-AFTER INSERT ON USUARIO
-FOR EACH ROW
-BEGIN
-    -- llama al procedimiento almacenado con el ID_USUARIO del nuevo registro
-    sp_insertar_detalles_usuario(:NEW.ID_USUARIO);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_insertar_detalles_usuario (
-    p_id_usuario IN NUMBER
-) AS
-BEGIN
-    INSERT INTO DETALLES_USUARIO (
-        ID_DETALLE, FECHA_NACIMIENTO, ALTURA_PERSONA, PESO_PERSONA,
-        LESIONES, MEDICAMENTOS, EMBARAZO, CIRUGIA, OBJETIVOS, ID_USUARIO
-    ) VALUES (
-        seq_detalle_id.NEXTVAL, TO_DATE('2000-01-01', 'YYYY-MM-DD'), NULL, NULL, NULL, NULL, NULL, NULL, NULL, p_id_usuario
-    );
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
---
-CREATE OR REPLACE PROCEDURE sp_update_detalles_usuario (
-    p_fecha_nacimiento IN DATE,
-    p_altura_persona IN FLOAT,
-    p_peso_persona IN FLOAT,
-    p_lesiones IN VARCHAR2,
-    p_medicamentos IN VARCHAR2,
-    p_embarazo IN VARCHAR2,
-    p_cirugia IN VARCHAR2,
-    p_objetivos IN VARCHAR2,
-    p_id_usuario IN NUMBER
-    
-) AS
-BEGIN
-    UPDATE DETALLES_USUARIO
-    SET FECHA_NACIMIENTO = p_fecha_nacimiento,
-        ALTURA_PERSONA = p_altura_persona,
-        PESO_PERSONA = p_peso_persona,
-        LESIONES = p_lesiones,
-        MEDICAMENTOS = p_medicamentos,
-        EMBARAZO = p_embarazo,
-        CIRUGIA = p_cirugia,
-        OBJETIVOS = p_objetivos
-    WHERE ID_USUARIO = p_id_usuario;
-
-    IF SQL%ROWCOUNT > 0 THEN
-        COMMIT;
-    END IF;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
 --------------------------------------------------------------------------------
 --NOTA MES
 --------------------------------------------------------------------------------
@@ -561,13 +307,13 @@ CREATE OR REPLACE PROCEDURE mesValidacionNotaMes(
     v_sql VARCHAR2(1000);
     v_count INT;
 BEGIN
-    -- ConstrucciÛn del SQL din·mico
+    -- ConstrucciÔøΩn del SQL dinÔøΩmico
     v_sql := 'SELECT COUNT(*) FROM NOTAMES NM JOIN FOTOS F ON NM.ID_FOTO = F.ID_FOTO ' ||
              'WHERE F.ID_USUARIO = :idUsuario ' ||
              'AND F.MES = TO_CHAR(SYSDATE, ''Month'', ''NLS_DATE_LANGUAGE=SPANISH'') ' ||
              'AND F.ANNO = TO_CHAR(SYSDATE, ''YYYY'')';
 
-    -- Ejecutar el SQL din·mico y obtener el resultado
+    -- Ejecutar el SQL dinÔøΩmico y obtener el resultado
     EXECUTE IMMEDIATE v_sql INTO v_count USING p_idUsuario;
 
     -- Validar el resultado
@@ -592,10 +338,10 @@ CREATE OR REPLACE PROCEDURE obtenerUltimoIdFoto(
 ) AS
     v_sql VARCHAR2(1000);
 BEGIN
-    -- ConstrucciÛn del SQL din·mico
+    -- ConstrucciÔøΩn del SQL dinÔøΩmico
     v_sql := 'SELECT NVL(MAX(ID_FOTO), 0) FROM FOTOS';
 
-    -- Ejecutar el SQL din·mico y obtener el resultado
+    -- Ejecutar el SQL dinÔøΩmico y obtener el resultado
     EXECUTE IMMEDIATE v_sql INTO p_idFoto;
 
 EXCEPTION
@@ -617,14 +363,14 @@ CREATE OR REPLACE PROCEDURE INSERTAR_FOTO (
     v_count NUMBER;
     v_sql VARCHAR2(1000);
 BEGIN
-    -- SQL Din·mico para validar si el usuario existe
+    -- SQL DinÔøΩmico para validar si el usuario existe
     v_sql := 'SELECT COUNT(*) FROM CPROYECTO.USUARIO WHERE ID_USUARIO = :1';
     EXECUTE IMMEDIATE v_sql INTO v_count USING p_idUsuario;
     IF v_count = 0 THEN
-        -- El usuario no existe, lanzar una excepciÛn
+        -- El usuario no existe, lanzar una excepciÔøΩn
         RAISE_APPLICATION_ERROR(-20001, 'El usuario con ID ' || p_idUsuario || ' no existe.');
     END IF;
-    -- SQL Din·mico para insertar la foto si el usuario existe
+    -- SQL DinÔøΩmico para insertar la foto si el usuario existe
     v_sql := 'INSERT INTO CPROYECTO.FOTOS (mes, anno, ruta_foto, id_usuario) ' ||
              'VALUES (:1, :2, :3, :4)';
     EXECUTE IMMEDIATE v_sql USING p_mes, p_anno, p_rutaFoto, p_idUsuario;
@@ -647,9 +393,9 @@ CREATE OR REPLACE PROCEDURE crearNotaMes(
 ) AS
     v_sql VARCHAR2(1000);
 BEGIN
-    -- SQL Din·mico para insertar la nota mensual
+    -- SQL DinÔøΩmico para insertar la nota mensual
     v_sql := 'INSERT INTO NOTAMES (NOTA_MENSUAL, ID_FOTO) VALUES (:1, :2)';
-    -- Ejecutar la consulta SQL din·mica
+    -- Ejecutar la consulta SQL dinÔøΩmica
     EXECUTE IMMEDIATE v_sql USING p_notaMensual, p_idFoto;
 EXCEPTION
     -- Manejo de excepciones
@@ -673,9 +419,9 @@ BEGIN
     WHERE f.mes = p_mes AND f.anno = p_anno AND f.id_usuario = p_idUsuario;
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
-        DBMS_OUTPUT.PUT_LINE('No se encontraron fotos para los par·metros proporcionados.');
+        DBMS_OUTPUT.PUT_LINE('No se encontraron fotos para los parÔøΩmetros proporcionados.');
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('OcurriÛ un error: ' || SQLERRM);
+        DBMS_OUTPUT.PUT_LINE('OcurriÔøΩ un error: ' || SQLERRM);
 END obtenerFotos;
 /
 ------------------------------------------------------------------------------------------------
@@ -708,9 +454,9 @@ CREATE OR REPLACE PROCEDURE UpdateNotaMes (
 ) AS
     v_sql VARCHAR2(1000);
 BEGIN
-    -- ConstrucciÛn de la consulta SQL din·mica
+    -- ConstrucciÔøΩn de la consulta SQL dinÔøΩmica
     v_sql := 'UPDATE notames SET NOTA_MENSUAL = :1 WHERE ID_FOTO = :2';
-    -- Ejecutar la consulta SQL din·mica
+    -- Ejecutar la consulta SQL dinÔøΩmica
     EXECUTE IMMEDIATE v_sql USING p_nota, p_idFoto;
     COMMIT;
 EXCEPTION
@@ -839,9 +585,9 @@ CREATE OR REPLACE PACKAGE BODY Check_Pkg AS
         WHERE f.mes = p_mes AND f.anno = p_anno AND f.id_usuario = p_idUsuario;
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
-            DBMS_OUTPUT.PUT_LINE('No se encontraron fotos para los par·metros proporcionados.');
+            DBMS_OUTPUT.PUT_LINE('No se encontraron fotos para los parÔøΩmetros proporcionados.');
         WHEN OTHERS THEN
-            DBMS_OUTPUT.PUT_LINE('OcurriÛ un error: ' || SQLERRM);
+            DBMS_OUTPUT.PUT_LINE('OcurriÔøΩ un error: ' || SQLERRM);
             RAISE;
     END obtenerFotos;
 
@@ -867,357 +613,6 @@ END Check_Pkg;
 /
 
 --------------------------------------------------------------------------------
---RUTINA
---------------------------------------------------------------------------------
-
-CREATE OR REPLACE PROCEDURE sp_insert_rutina (
-    p_nombre_rutina IN VARCHAR2,
-    p_dia_rutina IN VARCHAR2,
-    p_id_usuario IN NUMBER
-) AS
-BEGIN
-    INSERT INTO RUTINA (ID_RUTINA, NOMBRE_RUTINA, DIA_RUTINA, ID_USUARIO)
-    VALUES (seq_rutina_id.NEXTVAL, p_nombre_rutina, p_dia_rutina, p_id_usuario);
-
-IF SQL%ROWCOUNT > 0 THEN
-        COMMIT;
-    END IF;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_update_rutina (
-    p_id_rutina IN NUMBER,
-    p_nombre_rutina IN VARCHAR2,
-    p_dia_rutina IN VARCHAR2
-) AS
-BEGIN
-    UPDATE RUTINA
-    SET NOMBRE_RUTINA = p_nombre_rutina,
-        DIA_RUTINA = p_dia_rutina
-    WHERE ID_RUTINA = p_id_rutina;
-    
-    IF SQL%ROWCOUNT > 0 THEN
-        COMMIT;
-    END IF;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_delete_rutina (
-    p_id_rutina IN NUMBER
-) AS
-BEGIN
-    DELETE FROM RUTINA
-    WHERE ID_RUTINA = p_id_rutina;
-    
-IF SQL%ROWCOUNT > 0 THEN
-        COMMIT;
-    END IF;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
---Sp consulta listado rutina (id usuario)
-CREATE OR REPLACE PROCEDURE sp_get_rutinas (
-    p_id_usuario IN NUMBER,
-    p_cursor OUT SYS_REFCURSOR
-) AS
-    BEGIN
-    OPEN p_cursor FOR
-        SELECT ID_RUTINA, NOMBRE_RUTINA, DIA_RUTINA, ID_USUARIO
-        FROM RUTINA
-        WHERE ID_USUARIO = p_id_usuario;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
---sp consulta rutina individualmente (id rutina)
-CREATE OR REPLACE PROCEDURE sp_get_rutina (
-    p_id_rutina IN NUMBER,
-    p_cursor OUT SYS_REFCURSOR
-) AS
-    BEGIN
-    OPEN p_cursor FOR
-        SELECT ID_RUTINA, NOMBRE_RUTINA, DIA_RUTINA
-        FROM RUTINA
-        WHERE ID_RUTINA = p_id_rutina;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
---------------------------------------------------------------------------------
---Ejercicio
---------------------------------------------------------------------------------
-
-CREATE OR REPLACE PROCEDURE sp_insert_ejercicio (
-    p_nombre_ejercicio IN VARCHAR2,
-    p_setse IN VARCHAR2,
-    p_maquina IN VARCHAR2,
-    p_observaciones IN VARCHAR2,
-    p_id_rutina IN NUMBER
-) AS
-BEGIN
-    INSERT INTO EJERCICIO (ID_EJERCICIO, NOMBRE_EJERCICIO, SETSE, MAQUINA, OBSERVACIONES, ID_RUTINA)
-    VALUES (seq_ejercicio_id.NEXTVAL, p_nombre_ejercicio, p_setse, p_maquina, p_observaciones, p_id_rutina);
-
-    IF SQL%ROWCOUNT > 0 THEN
-        COMMIT;
-    END IF;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_update_ejercicio (
-    p_id_ejercicio IN NUMBER,
-    p_nombre_ejercicio IN VARCHAR2,
-    p_setse IN VARCHAR2,
-    p_maquina IN VARCHAR2,
-    p_observaciones IN VARCHAR2
-) AS
-BEGIN
-    UPDATE EJERCICIO
-    SET NOMBRE_EJERCICIO = p_nombre_ejercicio,
-        SETSE = p_setse,
-        MAQUINA = p_maquina,
-        OBSERVACIONES = p_observaciones
-    WHERE ID_EJERCICIO = p_id_ejercicio;
-    
-    IF SQL%ROWCOUNT > 0 THEN
-        COMMIT;
-    END IF;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_delete_ejercicio (
-    p_id_ejercicio IN NUMBER
-) AS
-BEGIN
-    DELETE FROM EJERCICIO
-    WHERE ID_EJERCICIO = p_id_ejercicio;
-    
-    IF SQL%ROWCOUNT > 0 THEN
-        COMMIT;
-    END IF;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_get_ejercicios (
-    p_id_rutina IN NUMBER,
-    p_cursor OUT SYS_REFCURSOR
-) AS
-BEGIN
-    OPEN p_cursor FOR
-        SELECT ID_EJERCICIO, NOMBRE_EJERCICIO, SETSE, MAQUINA, OBSERVACIONES, ID_RUTINA
-        FROM EJERCICIO
-        WHERE ID_RUTINA = p_id_rutina;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_get_ejercicio (
-    p_id_ejercicio IN NUMBER,
-    p_cursor OUT SYS_REFCURSOR
-) AS
-BEGIN
-    OPEN p_cursor FOR
-        SELECT ID_EJERCICIO, NOMBRE_EJERCICIO, SETSE, MAQUINA, OBSERVACIONES
-        FROM EJERCICIO
-        WHERE ID_EJERCICIO = p_id_ejercicio;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
---Sp consulta listado ejercicios (id rutina)
-CREATE OR REPLACE PROCEDURE sp_get_ejercicios (
-    p_id_rutina IN NUMBER,
-    p_cursor OUT SYS_REFCURSOR
-) AS
-BEGIN
-    OPEN p_cursor FOR
-        SELECT ID_EJERCICIO, NOMBRE_EJERCICIO, SETSE, MAQUINA, OBSERVACIONES, ID_RUTINA
-        FROM EJERCICIO
-        WHERE ID_RUTINA = p_id_rutina;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-commit;
---sp consulta ejercicio individualmente (id ejercicio)
-CREATE OR REPLACE PROCEDURE sp_get_ejercicio (
-    p_id_ejercicio IN NUMBER,
-    p_cursor OUT SYS_REFCURSOR
-) AS
-    BEGIN
-    OPEN p_cursor FOR
-        SELECT ID_RUTINA, NOMBRE_RUTINA, DIA_RUTINA
-        FROM RUTINA
-        WHERE ID_RUTINA = p_id_ejercicio;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
---------------------------------------------------------------------------------
---PAGOS
--------------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE sp_verificar_pagos (
-    p_id_usuario IN NUMBER,
-    p_existe OUT NUMBER
-) AS
-BEGIN
-
-    SELECT COUNT(*) INTO p_existe
-    FROM PAGOS
-    WHERE ID_USUARIO = p_id_usuario;
-    
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_get_pagos (
-    p_id_usuario IN NUMBER,
-    p_cursor OUT SYS_REFCURSOR
-) AS
-BEGIN
-    OPEN p_cursor FOR
-    SELECT ID_PAGO, MONTO, DIA_PAGO, ESTADO
-    FROM PAGOS
-    WHERE ID_USUARIO = p_id_usuario;
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_update_pagos (
-    p_id_usuario IN NUMBER,
-    p_monto IN NUMERIC,
-    p_dia_pago IN NUMBER,
-    p_estado IN VARCHAR2
-) AS
-BEGIN
-    UPDATE PAGOS
-    SET MONTO = p_monto,
-    DIA_PAGO = p_dia_pago,
-    ESTADO = p_estado
-    WHERE ID_USUARIO = p_id_usuario;
-
-    IF SQL%ROWCOUNT > 0 THEN
-        COMMIT;
-    END IF;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
-CREATE OR REPLACE PROCEDURE sp_insert_pagos (
-    p_id_usuario IN NUMBER,
-    p_monto IN NUMBER,
-    p_dia_pago IN NUMBER,
-    p_estado IN VARCHAR2
-) AS
-BEGIN
-    -- Insertar un nuevo registro en la tabla PAGOS
-    INSERT INTO PAGOS (ID_PAGO, MONTO, DIA_PAGO, ESTADO,ID_USUARIO)
-    VALUES (seq_pagos_id.NEXTVAL, p_monto, p_dia_pago, p_estado,p_id_usuario);
-
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
-
--------------------------------------------------------------------------------
---SP llamar vista usuario detalles
-CREATE OR REPLACE PROCEDURE sp_get_v_usuario_detalles (
-    p_id_usuario IN NUMBER,
-    p_cursor OUT SYS_REFCURSOR
-) AS
-BEGIN
-    OPEN p_cursor FOR
-    SELECT *
-    FROM V_USUARIOS_DETALLES
-    WHERE ID_USUARIO = p_id_usuario;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-END;
-/
---------------------------------------------------------------------------------
--- Vistas
---------------------------------------------------------------------------------
---USUARIO
---------------------------------------------------------------------------------
-CREATE OR REPLACE VIEW V_USUARIOS_DETALLES AS
-SELECT 
-    U.ID_USUARIO,
-    U.NOMBRE,
-    U.PRIMER_APELLIDO,
-    U.SEGUNDO_APELLIDO,
-    U.CORREO,
-    U.TIPO_SUSCRIPCION,
-    U.ID_ROL,
-    D.ID_DETALLE,
-    D.FECHA_NACIMIENTO,
-    D.ALTURA_PERSONA,
-    D.PESO_PERSONA,
-    D.LESIONES,
-    D.MEDICAMENTOS,
-    D.EMBARAZO,
-    D.CIRUGIA,
-    D.OBJETIVOS
-FROM 
-    USUARIO U
-LEFT JOIN 
-    DETALLES_USUARIO D
-ON 
-    U.ID_USUARIO = D.ID_USUARIO;
-/
-
-CREATE OR REPLACE VIEW V_USUARIOS_PAGOS AS
-SELECT 
-    U.ID_USUARIO,
-    U.NOMBRE,
-    U.PRIMER_APELLIDO,
-    U.SEGUNDO_APELLIDO,
-    U.CORREO,
-    U.TIPO_SUSCRIPCION,
-    U.ID_ROL,
-    P.ID_PAGO,
-    P.MONTO,
-    P.DIA_PAGO,
-    P.ESTADO
-FROM 
-    USUARIO U
-LEFT JOIN 
-    PAGOS P
-ON 
-    U.ID_USUARIO = P.ID_USUARIO;
-/
---------------------------------------------------------------------------------
 --FOTO
 --------------------------------------------------------------------------------
 CREATE OR REPLACE VIEW v_dueno_foto AS
@@ -1225,11 +620,7 @@ SELECT f.ID_FOTO, f.MES, f.ANNO, f.RUTA_FOTO, u.NOMBRE
 FROM FOTOS f
 JOIN USUARIO u ON f.ID_USUARIO = u.ID_USUARIO;
 /
---------------------------------------------------------------------------------
--- Funciones
---------------------------------------------------------------------------------
---FOTO
---------------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION fn_get_dueno_foto(
 p_id_foto IN NUMBER
 )
@@ -1266,274 +657,6 @@ EXCEPTION
         RETURN 'Ocurri? un error al obtener la nota de la foto.';
 END;
 /
-
---Paquetes
-CREATE OR REPLACE PACKAGE pkg_usuario AS
-    PROCEDURE insert_usuario (
-        p_nombre IN VARCHAR2,
-        p_primer_apellido IN VARCHAR2,
-        p_segundo_apellido IN VARCHAR2,
-        p_correo IN VARCHAR2,
-        p_tipo_suscripcion IN VARCHAR2,
-        p_id_rol IN NUMBER,
-        p_password IN VARCHAR2,
-        p_result OUT VARCHAR2
-    );
-    
-    PROCEDURE update_usuario (
-        p_id_usuario IN NUMBER,
-        p_nombre IN VARCHAR2,
-        p_primer_apellido IN VARCHAR2,
-        p_segundo_apellido IN VARCHAR2,
-        p_correo IN VARCHAR2,
-        p_tipo_suscripcion IN VARCHAR2,
-        p_id_rol IN NUMBER,
-        p_password IN VARCHAR2,
-        p_result OUT VARCHAR2
-    );
-    
-    PROCEDURE delete_usuario (
-        p_id_usuario IN NUMBER,
-        p_result OUT VARCHAR2
-    );
-    
-    PROCEDURE get_usuario (
-        p_id_usuario IN NUMBER
-    );
-END pkg_usuario;
-/
-
-CREATE OR REPLACE PACKAGE BODY pkg_usuario AS
-    PROCEDURE insert_usuario (
-        p_nombre IN VARCHAR2,
-        p_primer_apellido IN VARCHAR2,
-        p_segundo_apellido IN VARCHAR2,
-        p_correo IN VARCHAR2,
-        p_tipo_suscripcion IN VARCHAR2,
-        p_id_rol IN NUMBER,
-        p_password IN VARCHAR2,
-        p_result OUT VARCHAR2
-    ) AS
-    BEGIN
-        INSERT INTO USUARIO (NOMBRE, PRIMER_APELLIDO, SEGUNDO_APELLIDO, CORREO, TIPO_SUSCRIPCION, ID_ROL, PASSWORD)
-        VALUES (p_nombre, p_primer_apellido, p_segundo_apellido, p_correo, p_tipo_suscripcion, p_id_rol, p_password);
-
-        p_result := 'Insertado correctamente';
-    EXCEPTION
-        WHEN OTHERS THEN
-            p_result := SQLERRM;
-    END;
-    
-    PROCEDURE update_usuario (
-        p_id_usuario IN NUMBER,
-        p_nombre IN VARCHAR2,
-        p_primer_apellido IN VARCHAR2,
-        p_segundo_apellido IN VARCHAR2,
-        p_correo IN VARCHAR2,
-        p_tipo_suscripcion IN VARCHAR2,
-        p_id_rol IN NUMBER,
-        p_password IN VARCHAR2,
-        p_result OUT VARCHAR2
-    ) AS
-    BEGIN
-        UPDATE USUARIO
-        SET NOMBRE = p_nombre,
-            PRIMER_APELLIDO = p_primer_apellido,
-            SEGUNDO_APELLIDO = p_segundo_apellido,
-            CORREO = p_correo,
-            TIPO_SUSCRIPCION = p_tipo_suscripcion,
-            ID_ROL = p_id_rol,
-            PASSWORD = p_password
-        WHERE ID_USUARIO = p_id_usuario;
-
-        p_result := 'Actualizado correctamente';
-    EXCEPTION
-        WHEN OTHERS THEN
-            p_result := SQLERRM;
-    END;
-    
-    PROCEDURE delete_usuario (
-        p_id_usuario IN NUMBER,
-        p_result OUT VARCHAR2
-    ) AS
-    BEGIN
-        DELETE FROM USUARIO WHERE ID_USUARIO = p_id_usuario;
-
-        p_result := 'Eliminado correctamente';
-    EXCEPTION
-        WHEN OTHERS THEN
-            p_result := SQLERRM;
-    END;
-    
-    PROCEDURE get_usuario (
-        p_id_usuario IN NUMBER
-    ) AS
-        CURSOR usuario_cursor IS
-            SELECT ID_USUARIO, NOMBRE, PRIMER_APELLIDO, SEGUNDO_APELLIDO, CORREO, TIPO_SUSCRIPCION, ID_ROL, PASSWORD
-            FROM USUARIO
-            WHERE ID_USUARIO = p_id_usuario;
-            
-        v_id_usuario NUMBER;
-        v_nombre VARCHAR2(50);
-        v_primer_apellido VARCHAR2(50);
-        v_segundo_apellido VARCHAR2(50);
-        v_correo VARCHAR2(50);
-        v_tipo_suscripcion VARCHAR2(50);
-        v_id_rol NUMBER;
-        v_password VARCHAR2(255);
-    BEGIN
-        OPEN usuario_cursor;
-        LOOP
-            FETCH usuario_cursor INTO v_id_usuario, v_nombre, v_primer_apellido, v_segundo_apellido, v_correo, v_tipo_suscripcion, v_id_rol, v_password;
-            EXIT WHEN usuario_cursor%NOTFOUND;
-
-            DBMS_OUTPUT.PUT_LINE('ID_USUARIO: ' || v_id_usuario || ', NOMBRE: ' || v_nombre || ', PRIMER_APELLIDO: ' || v_primer_apellido || ', SEGUNDO_APELLIDO: ' || v_segundo_apellido || ', CORREO: ' || v_correo || ', TIPO_SUSCRIPCION: ' || v_tipo_suscripcion || ', ID_ROL: ' || v_id_rol || ', PASSWORD: ' || v_password);
-        END LOOP;
-
-        CLOSE usuario_cursor;
-    EXCEPTION
-        WHEN OTHERS THEN
-            DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
-    END;
-END pkg_usuario;
-/
-
-CREATE OR REPLACE PACKAGE BODY pkg_detalles_usuario AS
-    PROCEDURE insert_detalles_usuario (
-        p_fecha_nacimiento IN DATE,
-        p_altura_persona IN FLOAT,
-        p_peso_persona IN FLOAT,
-        p_lesiones IN VARCHAR2,
-        p_medicamentos IN VARCHAR2,
-        p_embarazo IN VARCHAR2,
-        p_cirugia IN VARCHAR2,
-        p_objetivos IN VARCHAR2(50) NOT NULL,
-        p_id_usuario IN NUMBER,
-        p_result OUT VARCHAR2
-    ) AS
-    BEGIN
-        INSERT INTO DETALLES_USUARIO (FECHA_NACIMIENTO, ALTURA_PERSONA, PESO_PERSONA, LESIONES, MEDICAMENTOS, EMBARAZO, CIRUGIA, OBJETIVOS, ID_USUARIO)
-        VALUES (p_fecha_nacimiento, p_altura_persona, p_peso_persona, p_lesiones, p_medicamentos, p_embarazo, p_cirugia, p_objetivos, p_id_usuario);
-
-        p_result := 'Insertado correctamente';
-    EXCEPTION
-        WHEN OTHERS THEN
-            p_result := SQLERRM;
-    END;
-    
-    PROCEDURE update_detalles_usuario (
-        p_id_detalle IN NUMBER,
-        p_fecha_nacimiento IN DATE,
-        p_altura_persona IN FLOAT,
-        p_peso_persona IN FLOAT,
-        p_lesiones IN VARCHAR2,
-        p_medicamentos IN VARCHAR2,
-        p_embarazo IN VARCHAR2,
-        p_cirugia IN VARCHAR2,
-        p_objetivos IN VARCHAR2(50) NOT NULL,
-        p_id_usuario IN NUMBER,
-        p_result OUT VARCHAR2
-    ) AS
-    BEGIN
-        UPDATE DETALLES_USUARIO
-        SET FECHA_NACIMIENTO = p_fecha_nacimiento,
-            ALTURA_PERSONA = p_altura_persona,
-            PESO_PERSONA = p_peso_persona,
-            LESIONES = p_lesiones,
-            MEDICAMENTOS = p_medicamentos,
-            EMBARAZO = p_embarazo,
-            CIRUGIA = p_cirugia,
-            OBJETIVOS = p_objetivos,
-            ID_USUARIO = p_id_usuario
-        WHERE ID_DETALLE = p_id_detalle;
-
-        p_result := 'Actualizado correctamente';
-    EXCEPTION
-        WHEN OTHERS THEN
-            p_result := SQLERRM;
-    END;
-    
-    PROCEDURE delete_detalles_usuario (
-        p_id_detalle IN NUMBER,
-        p_result OUT VARCHAR2
-    ) AS
-    BEGIN
-        DELETE FROM DETALLES_USUARIO WHERE ID_DETALLE = p_id_detalle;
-
-        p_result := 'Eliminado correctamente';
-    EXCEPTION
-        WHEN OTHERS THEN
-            p_result := SQLERRM;
-    END;
-    
-    PROCEDURE get_detalles_usuario (
-        p_id_detalle IN NUMBER
-    ) AS
-        CURSOR detalles_cursor IS
-            SELECT ID_DETALLE, FECHA_NACIMIENTO, ALTURA_PERSONA, PESO_PERSONA, LESIONES, MEDICAMENTOS, EMBARAZO, CIRUGIA, OBJETIVOS, ID_USUARIO
-            FROM DETALLES_USUARIO
-            WHERE ID_DETALLE = p_id_detalle;
-            
-        v_id_detalle         DETALLES_USUARIO.ID_DETALLE%TYPE;
-        v_fecha_nacimiento   DETALLES_USUARIO.FECHA_NACIMIENTO%TYPE;
-        v_altura_persona     DETALLES_USUARIO.ALTURA_PERSONA%TYPE;
-        v_peso_persona       DETALLES_USUARIO.PESO_PERSONA%TYPE;
-        v_lesiones           DETALLES_USUARIO.LESIONES%TYPE;
-        v_medicamentos       DETALLES_USUARIO.MEDICAMENTOS%TYPE;
-        v_embarazo           DETALLES_USUARIO.EMBARAZO%TYPE;
-        v_cirugia            DETALLES_USUARIO.CIRUGIA%TYPE;
-        v_objetivos          DETALLES_USUARIO.OBJETIVOS%TYPE;
-        v_id_usuario         DETALLES_USUARIO.ID_USUARIO%TYPE;
-    BEGIN
-        OPEN detalles_cursor;
-        FETCH detalles_cursor INTO v_id_detalle, v_fecha_nacimiento, v_altura_persona, v_peso_persona, v_lesiones, v_medicamentos, v_embarazo, v_cirugia, v_objetivos, v_id_usuario;
-        CLOSE detalles_cursor;
-
-        IF detalles_cursor%FOUND THEN
-            DBMS_OUTPUT.PUT_LINE('ID DETALLE: ' || v_id_detalle);
-            DBMS_OUTPUT.PUT_LINE('FECHA NACIMIENTO: ' || v_fecha_nacimiento);
-            DBMS_OUTPUT.PUT_LINE('ALTURA PERSONA: ' || v_altura_persona);
-            DBMS_OUTPUT.PUT_LINE('PESO PERSONA: ' || v_peso_persona);
-            DBMS_OUTPUT.PUT_LINE('LESIONES: ' || v_lesiones);
-            DBMS_OUTPUT.PUT_LINE('MEDICAMENTOS: ' || v_medicamentos);
-            DBMS_OUTPUT.PUT_LINE('EMBARAZO: ' || v_embarazo);
-            DBMS_OUTPUT.PUT_LINE('CIRUGIA: ' || v_cirugia);
-            DBMS_OUTPUT.PUT_LINE('OBJETIVOS: ' || v_objetivos);
-            DBMS_OUTPUT.PUT_LINE('ID USUARIO: ' || v_id_usuario);
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontraron detalles para el ID proporcionado.');
-        END IF;
-    EXCEPTION
-        WHEN OTHERS THEN
-            DBMS_OUTPUT.PUT_LINE('Error al recuperar los detalles: ' || SQLERRM);
-    END;
-END pkg_detalles_usuario;
-/
-
--- Eliminar la restricci√≥n de clave for√°nea en la tabla DETALLES_USUARIO
-ALTER TABLE DETALLES_USUARIO 
-   DROP CONSTRAINT fk_detalles_usuario_usuario;
-
--- Eliminar la restricci√≥n de clave for√°nea en la tabla RUTINA
-ALTER TABLE RUTINA 
-   DROP CONSTRAINT fk_rutina_usuario;
-
--- Eliminar la restricci√≥n de clave for√°nea en la tabla EJERCICIO
-ALTER TABLE EJERCICIO 
-   DROP CONSTRAINT fk_ejercicio_rutina;
-
--- Eliminar la restricci√≥n de clave for√°nea en la tabla NOTAMES
-ALTER TABLE NOTAMES 
-   DROP CONSTRAINT fk_notaMes_fotos;
-
--- Eliminar la restricci√≥n de clave for√°nea en la tabla FOTOS
-ALTER TABLE FOTOS 
-   DROP CONSTRAINT fk_fotos_usuario;
-
--- Eliminar la restricci√≥n de clave for√°nea en la tabla PAGOS
-ALTER TABLE PAGOS 
-   DROP CONSTRAINT fk_pagos_usuario;
-
 
 /*
 --ALTER USER C##PROYECTO QUOTA UNLIMITED ON USERS;
